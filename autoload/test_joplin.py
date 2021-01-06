@@ -1,39 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from joplin import *
-
-
-def get_folders(j):
-    folders = []
-    page = 1
-    has_more = True
-    while has_more:
-        cur, has_more = j.get_all(FolderNode, page)
-        page += 1
-        folders += cur
-    return folders
-
-
-def get_notes(j):
-    notes = []
-    page = 1
-    has_more = True
-    while has_more:
-        cur, has_more = j.get_all(NoteNode, page)
-        page += 1
-        notes += cur
-    return notes
-
-
-def get_tags(j):
-    tags = []
-    page = 1
-    has_more = True
-    while has_more:
-        cur, has_more = j.get_all(TagNode, page)
-        page += 1
-        tags += cur
-    return tags
+from joplin import Joplin
+from node import *
+import time
+import os
 
 
 def create_folder(j, new_folder_title):
@@ -42,7 +12,7 @@ def create_folder(j, new_folder_title):
     assert new_folder.id != ''
     assert new_folder.parent_id == ''
     assert new_folder.title == new_folder_title
-    folders = get_folders(j)
+    folders = j.get_all(FolderNode)
     matched = list(filter(lambda folder: folder.id == new_folder.id, folders))
     assert len(matched) != 0
     assert matched[0].title == new_folder_title
@@ -54,7 +24,7 @@ def update_folder(j, folder):
     id = folder.id
     folder.title = new_title
     j.put(folder)
-    folders = get_folders(j)
+    folders = j.get_all(FolderNode)
     matched = list(filter(lambda f: f.id == folder.id, folders))
     assert len(matched) != 0
     assert matched[0].title == new_title
@@ -64,7 +34,7 @@ def update_folder(j, folder):
 
 def delete_folder(j, id):
     j.delete(FolderNode, id)
-    folders = get_folders(j)
+    folders = j.get_all(FolderNode)
     matched = list(filter(lambda f: f.id == id, folders))
     assert len(matched) == 0
     get = j.get(FolderNode, id)
@@ -102,7 +72,7 @@ def udpate_note(j, note):
 
 
 def create_tag(j):
-    tags = get_tags(j)
+    tags = j.get_all(TagNode)
     title = 'tag_' + str(time.time())
     matched = list(filter(lambda tag: tag.title == title, tags))
     assert len(matched) == 0
@@ -128,16 +98,14 @@ def update_tag(j, tag):
 
 
 def note_tags(j, node, tag):
-    tags, has_more = j.get_note_tags(node.id)
-    assert has_more is False
+    tags = j.get_note_tags(node.id)
     assert len(tags) == 1
     assert tags[0].id == tag.id
     assert tags[0].title == tag.title
 
 
 def tag_notes(j, tag, node):
-    nodes, has_more = j.get_tag_notes(tag.id)
-    assert has_more is False
+    nodes = j.get_tag_notes(tag.id)
     assert len(nodes) == 1
     assert nodes[0].id == node.id
     assert nodes[0].title == node.title
@@ -145,11 +113,9 @@ def tag_notes(j, tag, node):
 
 def delete_tag_note(j, tag, node):
     j.delete_tag_note(tag.id, node.id)
-    tags, has_more = j.get_note_tags(node.id)
-    assert has_more is False
+    tags = j.get_note_tags(node.id)
     assert len(tags) == 0
-    notes, has_more = j.get_tag_notes(tag.id)
-    assert has_more is False
+    notes = j.get_tag_notes(tag.id)
     assert len(notes) == 0
 
 
@@ -179,21 +145,14 @@ def create_resource(j, filename):
 def update_resouce(j, resource):
     new_title = resource.title + ' modified'
     resource.title = new_title
-    resource = j.put_resource(resource)
+    resource = j.put(resource)
     assert resource.id != ''
     assert resource.title == new_title
     return resource
 
 
 def get_resrouces(j):
-    resources = []
-    page = 1
-    has_more = True
-    while has_more:
-        cur, has_more = j.get_all(ResourceNode, page)
-        page += 1
-        resources += cur
-    return resources
+    return j.get_all(ResourceNode)
 
 
 def resource_file(j, id):
@@ -202,8 +161,7 @@ def resource_file(j, id):
 
 
 def folder_notes(j, id, note):
-    notes, has_more = j.get_folder_notes(id)
-    assert has_more is False
+    notes = j.get_folder_notes(id)
     assert len(notes) == 1
     assert notes[0].id == note.id
 
@@ -214,7 +172,7 @@ def test_joplin():
     assert token != ''
     j = Joplin(token)
     # get folders
-    folders = get_folders(j)
+    folders = j.get_all(FolderNode)
 
     folder_titles = list([folder.title for folder in folders])
     new_folder_title = 'test title ' + str(time.time())
