@@ -31,7 +31,6 @@ _help_lines = [
     '# <CR>: open in prev window',
     '# o: open in prev window',
     '# t: open in new tab',
-    '# T: open in new tab silent',
     '# i: open split',
     '# s: open vsplit',
     '#',
@@ -194,7 +193,7 @@ def current_help():
     return vim.current.buffer.vars.get('joplin_help', False)
 
 
-def cmd_o():
+def get_cur_line():
     global _lines
     global _saved_winnr
     base_line = len(_help_lines) if current_help() else 0
@@ -204,6 +203,24 @@ def cmd_o():
         return
 
     line = _lines[lineno - 1]
+    return line
+
+
+def edit(command, line):
+    lazyredraw_saved = vim.options['lazyredraw']
+    dirname = vim.eval('tempname()')
+    os.mkdir(dirname)
+    filename = dirname + '/' + line.treenode.node.title + '.md'
+    vim.command('silent %s %s' % (command, filename))
+    vim.current.buffer.vars['joplin_note_id'] = line.treenode.node.id
+    note = j.get(NoteNode, line.treenode.node.id)
+    vim.current.buffer[:] = note.body.split('\n')
+    vim.command('silent noautocmd w')
+    vim.options['lazyredraw'] = lazyredraw_saved
+
+
+def cmd_o():
+    line = get_cur_line()
     if line.treenode.is_folder():
         if not line.treenode.fetched or line.treenode.dirty:
             line.treenode.fetch(j)
@@ -221,22 +238,13 @@ def cmd_o():
         else:
             vim.command('%dwincmd w' % _saved_winnr)
 
-        dirname = vim.eval('tempname()')
-        os.mkdir(dirname)
-        filename = dirname + '/' + line.treenode.node.title + '.md'
-        vim.command('silent e ' + filename)
-        vim.current.buffer.vars['joplin_note_id'] = line.treenode.node.id
-        note = j.get(NoteNode, line.treenode.node.id)
-        vim.current.buffer[:] = note.body.split('\n')
-        vim.command('silent noautocmd w')
+        edit('edit', line)
 
 
 def cmd_t():
-    pass
-
-
-def cmd_T():
-    pass
+    line = get_cur_line()
+    if not line.treenode.is_folder():
+        edit('tabnew', line)
 
 
 def cmd_i():
