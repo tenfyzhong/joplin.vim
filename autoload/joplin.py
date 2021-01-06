@@ -285,7 +285,11 @@ class Joplin(object):
         if r.status_code != 200:
             print(r.status_code, r.text)
             return None
-        print(id, r.text)
+        json = r.json()
+        items = json['items']
+        has_more = json['has_more']
+        notes = list([NoteNode(**item) for item in items])
+        return notes, has_more
 
     def post_resource(self, filename, resource):
         """Creates a new resource
