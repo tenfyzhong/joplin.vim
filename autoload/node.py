@@ -81,7 +81,6 @@ class FolderNode(Node):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.parent_id = kwargs.get('parent_id', '')
-        self.open_ = kwargs.get('open_', False)
 
     @classmethod
     def path(cls):
