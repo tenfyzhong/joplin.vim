@@ -3,14 +3,29 @@
 import requests
 import inspect
 import time
-import os
+# import os
 import json
+
+
+def factory_node(**kwargs):
+    if 'type_' not in kwargs:
+        return None
+    type_ = kwargs['type_']
+    if type_ == 1:
+        return NoteNode(**kwargs)
+    elif type_ == 2:
+        return FolderNode(**kwargs)
+    elif type_ == 4:
+        return ResourceNode(**kwargs)
+    elif type_ == 5:
+        return TagNode(**kwargs)
+    else:
+        return None
 
 
 class Node(object):
     """base node"""
     def __init__(self, **kwargs):
-        """TODO: to be defined. """
         self.id = kwargs.get('id', '')
         self.title = kwargs.get('title', '')
         self.created_time = kwargs.get('created_time', 0)
@@ -69,7 +84,6 @@ class NoteNode(Node):
 class FolderNode(Node):
     """Node for Folder"""
     def __init__(self, **kwargs):
-        """TODO: to be defined. """
         super().__init__(**kwargs)
         self.parent_id = kwargs.get('parent_id', '')
         self.open_ = kwargs.get('open_', False)
@@ -82,7 +96,6 @@ class FolderNode(Node):
 class ResourceNode(Node):
     """Node for resource"""
     def __init__(self, **kwargs):
-        """TODO: to be defined. """
         super().__init__(**kwargs)
         self.mime = kwargs.get('mime', '')
         self.filename = kwargs.get('filename', '')
@@ -97,7 +110,6 @@ class ResourceNode(Node):
 class TagNode(Node):
     """Node for tag"""
     def __init__(self, **kwargs):
-        """TODO: to be defined. """
         super().__init__(**kwargs)
         self.parent_id = kwargs.get('parent_id', '')
 
@@ -123,6 +135,30 @@ class Joplin(object):
         r = requests.get(url)
         return r.status_code == 200 and r.text == 'JoplinClipperServer'
 
+    def search(self, query, typ=None):
+        """search data
+
+        :query: the keyword to search
+        :typ: search special type
+        :returns: TODO
+
+        """
+        url = '%s/search?token=%s&query=%s' % (self.base_url, self.token,
+                                               query)
+        if typ is not None:
+            url += '&type=%s' % typ
+
+        r = requests.get(url)
+        if r.status_code != 200:
+            print(r.status_code, r.text)
+            return None
+        json = r.json()
+        items = json['items']
+        has_more = json['has_more']
+        nodes = list([factory_node(**item) for item in items])
+        nodes = list(filter(lambda node: node is not None, nodes))
+        return nodes, has_more
+
     def get_all(self, cls, page=1, order_by='updated_time', order_dir='DESC'):
         """Gets cls' objects
 
@@ -133,7 +169,6 @@ class Joplin(object):
         """
         url = '%s/%s?token=%s&order_by=%s&order_dir=%s&page=%d' % (
             self.base_url, cls.path(), self.token, order_by, order_dir, page)
-        print('url', url)
         r = requests.get(url)
         if r.status_code != 200:
             print(r.status_code, r.text)
@@ -258,7 +293,7 @@ class Joplin(object):
         """Gets the actual file associated with this resource
 
         :id: resource's id
-        :returns: TODO
+        :returns: file text
 
         """
         url = '%s/resources/%s/file?token=%s' % (self.base_url, id, self.token)
@@ -295,7 +330,7 @@ class Joplin(object):
         """Creates a new resource
 
         :resource: the resource to create
-        :returns: TODO
+        :returns: resource
 
         """
         url = '%s/resources?token=%s' % (self.base_url, self.token)
@@ -315,7 +350,7 @@ class Joplin(object):
         """Sets the properties of the resource with id
 
         :resource: the resource to update
-        :returns: TODO
+        :returns: resource
 
         """
         url = '%s/resources/%s?token=%s' % (self.base_url, resource.id,
@@ -376,3 +411,10 @@ class Joplin(object):
         r = requests.delete(url)
         if r.status_code != 200:
             print(r.status_code, r.text)
+
+
+# if __name__ == '__main__':
+#     token = os.environ['JOPLIN_TOKEN']
+#     assert token != ''
+#     j = Joplin(token)
+#     print(j.search('广*'))
