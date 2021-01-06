@@ -123,7 +123,7 @@ class Joplin(object):
         r = requests.get(url)
         return r.status_code == 200 and r.text == 'JoplinClipperServer'
 
-    def get_all(self, cls, page=1):
+    def get_all(self, cls, page=1, order_by='updated_time', order_dir='DESC'):
         """Gets cls' objects
 
         :cls: the object type
@@ -131,8 +131,8 @@ class Joplin(object):
         :returns: ojbects and has_more if success else None
 
         """
-        url = '%s/%s?token=%s&order_by=updated_time&order_dir=DESC&page=%d' % (
-            self.base_url, cls.path(), self.token, page)
+        url = '%s/%s?token=%s&order_by=%s&order_dir=%s&page=%d' % (
+            self.base_url, cls.path(), self.token, order_by, order_dir, page)
         print('url', url)
         r = requests.get(url)
         if r.status_code != 200:
@@ -268,15 +268,19 @@ class Joplin(object):
             return None
         return r.text
 
-    def get_resource_notes(self, id, page=1):
+    def get_resource_notes(self,
+                           id,
+                           page=1,
+                           order_by='updated_time',
+                           order_dir='DESC'):
         """Gets the notes associated with the resource with id
 
         :id: resource's id
         :returns: notes' id
 
         """
-        url = '%s/resources/%s/notes?token=%s&order_by=updated_time&order_dir=DESC&page=%d' % (
-            self.base_url, id, self.token, page)
+        url = '%s/resources/%s/notes?token=%s&order_by=%s&order_dir=%s&page=%d' % (
+            self.base_url, id, self.token, order_by, order_dir, page)
         r = requests.get(url)
         if r.status_code != 200:
             print(r.status_code, r.text)
@@ -318,15 +322,19 @@ class Joplin(object):
             return None
         return ResourceNode(**r.json())
 
-    def get_tag_notes(self, id, page=1):
+    def get_tag_notes(self,
+                      id,
+                      page=1,
+                      order_by='updated_time',
+                      order_dir='DESC'):
         """Gets all the notes with this tag
 
         :id: tag's id
         :returns: None
 
         """
-        url = '%s/tags/%s/notes?token=%s&order_by=updated_time&order_dir=DESC&page=%d' % (
-            self.base_url, id, self.token, page)
+        url = '%s/tags/%s/notes?token=%s&order_by=%s&order_dir=%s&page=%d' % (
+            self.base_url, id, self.token, order_by, order_dir, page)
         r = requests.get(url)
         if r.status_code != 200:
             print(r.status_code, r.text)
