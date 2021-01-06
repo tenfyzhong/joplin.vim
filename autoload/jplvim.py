@@ -11,7 +11,7 @@ _treenodes = None
 _lines = None
 _show_help = False
 _base_line = 0
-
+_cur_note = None
 _saved_winnr = -1
 _saved_pos = None
 
@@ -222,6 +222,9 @@ def cmd_o():
             vim.command('wincmd w')
         else:
             vim.command('%dwincmd w' % _saved_winnr)
+
+        global _cur_note
+        _cur_note = line.treenode.node
 
         dirname = vim.eval('tempname()')
         os.mkdir(dirname)
