@@ -5,13 +5,12 @@ import vim
 import joplin
 import tree
 import os
+import sys
 from node import NoteNode
 
 _treenodes = None
 _lines = None
 _show_help = False
-_base_line = 0
-_cur_note = None
 _saved_winnr = -1
 _saved_pos = None
 
@@ -20,7 +19,7 @@ width = 30
 token = os.environ.get('JOPLIN_TOKEN', '')
 if token == '':
     print('JOPLIN_TOKEN is empty')
-    os.exit(-1)
+    sys.exit(-1)
 
 j = joplin.Joplin(token)
 
@@ -58,8 +57,8 @@ _help_lines = [
     '# Other mappings~',
     '# q: Close the Joplin window',
     '# ?: toggle help',
+    '# ' + (width - 2) * '=',
     '',
-    '# ' + (width - 2) * '-',
 ]
 
 
@@ -96,7 +95,7 @@ def open_window():
     global _saved_winnr
     global _saved_pos
     _saved_winnr = int(vim.eval('bufwinnr("%")'))
-    _saved_pos = vim.eval('getcurpos("%")')
+    _saved_pos = vim.eval('getcurpos()')
     bufname = _bufname()
     winnr = vim.eval('bufwinnr("%s")' % bufname)
     winnr = int(winnr)
@@ -166,22 +165,16 @@ def _bufname():
     return 'joplin.tree'
 
 
-def help():
-    return _help_lines if _show_help else []
-
-
 def render():
     global _treenodes
     global _lines
-    global _base_line
     if _treenodes is None:
         _treenodes = tree.construct_folder_tree(j)
     lines = note_text(_treenodes, 0)
-    text = help()
-    _base_line = len(text)
-    text += list([line.text() for line in lines])
+    text = _help_lines if current_help() else []
+    cur = list([line.text() for line in lines])
     vim.current.buffer.options['modifiable'] = True
-    vim.current.buffer[:] = text
+    vim.current.buffer[:] = text + cur
     vim.current.buffer.options['modifiable'] = False
     _lines = lines
 
@@ -197,10 +190,15 @@ def note_text(nodes, indent):
     return lines
 
 
+def current_help():
+    return vim.current.buffer.vars.get('joplin_help', False)
+
+
 def cmd_o():
     global _lines
     global _saved_winnr
-    lineno = int(vim.eval('line(".")')) - _base_line
+    base_line = len(_help_lines) if current_help() else 0
+    lineno = int(vim.eval('line(".")')) - base_line
     if lineno > len(_lines):
         print('illegal lineno %d' % lineno)
         return
@@ -223,14 +221,11 @@ def cmd_o():
         else:
             vim.command('%dwincmd w' % _saved_winnr)
 
-        global _cur_note
-        _cur_note = line.treenode.node
-
         dirname = vim.eval('tempname()')
         os.mkdir(dirname)
-        filename = dirname + '/' + line.treenode.node.title
+        filename = dirname + '/' + line.treenode.node.title + '.md'
         vim.command('silent e ' + filename)
-        vim.current.buffer.options['filetype'] = 'markdown'
+        vim.current.buffer.vars['joplin_note_id'] = line.treenode.node.id
         note = j.get(NoteNode, line.treenode.node.id)
         vim.current.buffer[:] = note.body.split('\n')
         vim.command('silent noautocmd w')
@@ -293,4 +288,6 @@ def cmd_q():
 
 
 def cmd_question_mark():
-    pass
+    joplin_help = current_help()
+    vim.current.buffer.vars['joplin_help'] = not joplin_help
+    render()
