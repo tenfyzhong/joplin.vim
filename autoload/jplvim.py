@@ -93,7 +93,7 @@ def open_window():
     """
     global _saved_winnr
     global _saved_pos
-    _saved_winnr = int(vim.eval('bufwinnr("%")'))
+    _saved_winnr = int(vim.eval('winnr("#")'))
     _saved_pos = vim.eval('getcurpos()')
     bufname = _bufname()
     winnr = vim.eval('bufwinnr("%s")' % bufname)
@@ -195,7 +195,6 @@ def current_help():
 
 def get_cur_line():
     global _lines
-    global _saved_winnr
     base_line = len(_help_lines) if current_help() else 0
     lineno = int(vim.eval('line(".")')) - base_line
     if lineno > len(_lines):
@@ -219,7 +218,16 @@ def edit(command, line):
     vim.options['lazyredraw'] = lazyredraw_saved
 
 
+def go_to_previous_win():
+    if _saved_winnr > 0:
+        vim.command('%dwincmd w' % _saved_winnr)
+    else:
+        vim.command('wincmd w')
+
+
 def cmd_o():
+    global _saved_winnr
+    print('_saved_winnr', _saved_winnr)
     line = get_cur_line()
     if line.treenode.is_folder():
         if not line.treenode.fetched or line.treenode.dirty:
@@ -233,11 +241,7 @@ def cmd_o():
         render()
         vim.Function('setpos')('.', saved_pos)
     else:
-        if _saved_winnr > 0:
-            vim.command('wincmd w')
-        else:
-            vim.command('%dwincmd w' % _saved_winnr)
-
+        go_to_previous_win()
         edit('edit', line)
 
 
@@ -248,7 +252,11 @@ def cmd_t():
 
 
 def cmd_i():
-    pass
+    global _saved_winnr
+    line = get_cur_line()
+    if not line.treenode.is_folder():
+        go_to_previous_win()
+        edit('split', line)
 
 
 def cmd_s():
