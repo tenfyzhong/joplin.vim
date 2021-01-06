@@ -252,7 +252,6 @@ def cmd_t():
 
 
 def cmd_i():
-    global _saved_winnr
     line = get_cur_line()
     if not line.treenode.is_folder():
         go_to_previous_win()
@@ -260,7 +259,10 @@ def cmd_i():
 
 
 def cmd_s():
-    pass
+    line = get_cur_line()
+    if not line.treenode.is_folder():
+        go_to_previous_win()
+        edit('vsplit', line)
 
 
 def cmd_O():
