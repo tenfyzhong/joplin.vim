@@ -229,10 +229,11 @@ def cmd_o():
         dirname = vim.eval('tempname()')
         os.mkdir(dirname)
         filename = dirname + '/' + line.treenode.node.title
-        vim.command('e ' + filename)
+        vim.command('silent e ' + filename)
         vim.current.buffer.options['filetype'] = 'markdown'
         note = j.get(NoteNode, line.treenode.node.id)
         vim.current.buffer[:] = note.body.split('\n')
+        vim.command('silent noautocmd w')
 
 
 def cmd_t():
