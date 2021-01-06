@@ -22,6 +22,18 @@ class TreeNode(object):
     def __repr__(self):
         return str(self.node)
 
+    def open(self):
+        self._open = True
+
+    def close(self):
+        self._open = False
+
+    def is_open(self):
+        return self._open
+
+    def is_folder(self):
+        return isinstance(self.node, FolderNode)
+
     def fetch(self, joplin):
         """Fetch all notes from joplin
         :joplin: joplin instance
