@@ -68,17 +68,24 @@ def open_window():
     global _saved_pos
     _saved_winnr = int(vim.eval('winnr("#")'))
     _saved_pos = vim.eval('getcurpos()')
-    bufname = _bufname()
-    winnr = vim.eval('bufwinnr("%s")' % bufname)
+    bufname_ = bufname()
+    winnr = vim.eval('bufwinnr("%s")' % bufname_)
     winnr = int(winnr)
     if winnr != -1:
         vim.command('win_gotoid("%s")' % winnr)
         return
     vim.command('silent keepalt topleft vertical %d split %s' %
-                (width, bufname))
+                (width, bufname_))
     set_options()
     set_map()
     render()
+
+
+def close_window():
+    bufname_ = bufname()
+    winnr = vim.Function('bufwinnr')(bufname_)
+    if winnr > 0:
+        vim.command('%dclose' % winnr)
 
 
 def set_options():
@@ -132,7 +139,7 @@ def set_map():
         vim.command(cmd)
 
 
-def _bufname():
+def bufname():
     return 'tree.joplin'
 
 
@@ -373,10 +380,7 @@ def cmd_ctrl_k():
 
 
 def cmd_q():
-    bufname = _bufname()
-    winnr = vim.Function('bufwinnr')(bufname)
-    if winnr > 0:
-        vim.command('%dclose' % winnr)
+    close_window()
 
 
 def cmd_question_mark():
