@@ -357,14 +357,9 @@ def cmd_ctrl_j():
     nodes = treenode.parent.children if \
         treenode.parent is not None else \
         _treenodes
-    i = 0
-    while i < len(nodes):
-        if nodes[i] == treenode:
-            break
-        i += 1
-
-    if i + 1 < len(nodes):
-        cursor(nodes[i + 1])
+    i = treenode.child_index_of_parent + 1
+    if i < len(nodes):
+        cursor(nodes[i])
 
 
 def cmd_ctrl_k():
@@ -372,14 +367,9 @@ def cmd_ctrl_k():
     nodes = treenode.parent.children if \
         treenode.parent is not None else \
         _treenodes
-    i = 0
-    while i < len(nodes):
-        if nodes[i] == treenode:
-            break
-        i += 1
-
-    if i - 1 >= 0:
-        cursor(nodes[i - 1])
+    i = treenode.child_index_of_parent - 1
+    if i >= 0:
+        cursor(nodes[i])
 
 
 def cmd_q():

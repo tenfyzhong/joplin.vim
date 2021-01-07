@@ -17,6 +17,7 @@ class TreeNode(object):
         self._open = False
         self.lineno = 0
         self.indent = 0
+        self.child_index_of_parent = -1
 
     def __str__(self):
         return str(self.node)
@@ -68,6 +69,8 @@ class TreeNode(object):
             self.children += nodes
             self.fetched = True
             self.dirty = False
+            for i, node in enumerate(self.children):
+                node.child_index_of_parent = i
         else:
             note = joplin.get(NoteNode, self.node.id)
             self.node = note
@@ -89,7 +92,10 @@ def construct_folder_tree(joplin):
             node.parent = parent
             node.parent.children.append(node)
 
-    return list([node for node in nodes if node.parent is None])
+    nodes = list([node for node in nodes if node.parent is None])
+    for i, node in enumerate(nodes):
+        node.child_index_of_parent = i
+    return nodes
 
 
 # def fetch(joplin, nodes):
