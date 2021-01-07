@@ -16,12 +16,22 @@ class TreeNode(object):
         self.dirty = False
         self._open = False
         self.lineno = 0
+        self.indent = 0
 
     def __str__(self):
         return str(self.node)
 
     def __repr__(self):
         return str(self.node)
+
+    def text(self):
+        sign = ''
+        if not self.is_folder():
+            sign = '  '
+        else:
+            sign = '- ' if self.is_open() else '+ '
+        line = self.indent * '  ' + sign + self.node.title
+        return line
 
     def open(self, joplin):
         self._open = True

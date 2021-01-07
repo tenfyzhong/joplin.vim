@@ -9,7 +9,6 @@ import sys
 from node import NoteNode
 
 _treenodes = None
-_lines = None
 _show_help = False
 _saved_winnr = -1
 _saved_pos = None
@@ -61,31 +60,6 @@ _help_lines = [
 ]
 
 
-class Line(object):
-    """Docstring for Line. """
-    def __init__(self, treenode, indent):
-        """TODO: to be defined.
-
-        :treenode: TODO
-
-        """
-        self.treenode = treenode
-        self._indent = indent
-
-    def text(self):
-        """TODO: Docstring for text.
-        :returns: TODO
-
-        """
-        sign = ''
-        if not self.treenode.is_folder():
-            sign = '  '
-        else:
-            sign = '- ' if self.treenode.is_open() else '+ '
-        line = self._indent * '  ' + sign + self.treenode.node.title
-        return line
-
-
 def open_window():
     """TODO: Docstring for new_window.
     :returns: TODO
@@ -99,7 +73,6 @@ def open_window():
     winnr = vim.eval('bufwinnr("%s")' % bufname)
     winnr = int(winnr)
     if winnr != -1:
-        print('wtf')
         vim.command('win_gotoid("%s")' % winnr)
         return
     vim.command('silent keepalt topleft vertical %d split %s' %
@@ -170,52 +143,68 @@ def render():
     if _treenodes is None:
         _treenodes = tree.construct_folder_tree(j)
     lines = note_text(_treenodes, 0)
-    helptext = _help_lines if current_help() else []
+    helptext = _help_lines if has_help() else []
     cur = list([line.text() for line in lines])
     vim.current.buffer.options['modifiable'] = True
     vim.current.buffer[:] = helptext + cur
     vim.current.buffer.options['modifiable'] = False
     helplen = len(helptext)
     for i, line in enumerate(lines):
-        line.treenode.lineno = helplen + i + 1
-    _lines = lines
+        line.lineno = helplen + i + 1
 
 
 def note_text(nodes, indent):
     lines = []
     for node in nodes:
-        line = Line(node, indent)
-        lines.append(line)
+        node.indent = indent
+        lines.append(node)
         if node.is_open():
             sub = note_text(node.children, indent + 1)
             lines += sub
     return lines
 
 
-def current_help():
+def has_help():
     return vim.current.buffer.vars.get('joplin_help', False)
 
 
 def get_cur_line():
-    global _lines
-    base_line = len(_help_lines) if current_help() else 0
+    base_line = len(_help_lines) if has_help() else 0
     lineno = int(vim.eval('line(".")')) - base_line
-    if lineno > len(_lines):
-        print('illegal lineno %d' % lineno)
-        return
-
-    line = _lines[lineno - 1]
-    return line
+    return find_treenode(_treenodes, lineno)
 
 
-def edit(command, line):
+def find_treenode(nodes, lineno):
+    i = 0
+    j = len(nodes) - 1
+
+    if i > j:
+        return None
+    if nodes[j].lineno < lineno:
+        return find_treenode(nodes[j].children,
+                             lineno) if nodes[j].is_folder() else None
+    while i <= j:
+        mid = int((i + j) / 2)
+        if nodes[mid].lineno == lineno:
+            return nodes[mid]
+        elif nodes[mid].lineno < lineno:
+            i = mid + 1
+        elif nodes[mid].lineno > lineno:
+            j = mid - 1
+
+    mid = i if nodes[i].lineno < lineno else i - 1
+    return find_treenode(nodes[mid].children,
+                         lineno) if nodes[i].is_folder() else None
+
+
+def edit(command, treenode):
     lazyredraw_saved = vim.options['lazyredraw']
     dirname = vim.eval('tempname()')
     os.mkdir(dirname)
-    filename = dirname + '/' + line.treenode.node.title + '.md'
+    filename = dirname + '/' + treenode.node.title + '.md'
     vim.command('silent %s %s' % (command, filename))
-    vim.current.buffer.vars['joplin_note_id'] = line.treenode.node.id
-    note = j.get(NoteNode, line.treenode.node.id)
+    vim.current.buffer.vars['joplin_note_id'] = treenode.node.id
+    note = j.get(NoteNode, treenode.node.id)
     vim.current.buffer[:] = note.body.split('\n')
     vim.command('silent noautocmd w')
     vim.options['lazyredraw'] = lazyredraw_saved
@@ -230,39 +219,47 @@ def go_to_previous_win():
 
 def cmd_o():
     global _saved_winnr
-    print('_saved_winnr', _saved_winnr)
-    line = get_cur_line()
-    if line.treenode.is_folder():
-        if line.treenode.is_open():
-            line.treenode.close()
+    treenode = get_cur_line()
+    if treenode is None:
+        return
+    if treenode.is_folder():
+        if treenode.is_open():
+            treenode.close()
         else:
-            line.treenode.open(j)
+            treenode.open(j)
         saved_pos = vim.eval('getcurpos()')
         render()
         vim.Function('setpos')('.', saved_pos)
     else:
         go_to_previous_win()
-        edit('edit', line)
+        edit('edit', treenode)
 
 
 def cmd_t():
-    line = get_cur_line()
-    if not line.treenode.is_folder():
-        edit('tabnew', line)
+    treenode = get_cur_line()
+    if treenode is None:
+        return
+
+    if treenode.is_folder():
+        edit('tabnew', treenode)
 
 
 def cmd_i():
-    line = get_cur_line()
-    if not line.treenode.is_folder():
+    treenode = get_cur_line()
+    if treenode is None:
+        return
+    if not treenode.is_folder():
         go_to_previous_win()
-        edit('split', line)
+        edit('split', treenode)
 
 
 def cmd_s():
-    line = get_cur_line()
-    if not line.treenode.is_folder():
+    treenode = get_cur_line()
+    if treenode is None:
+        return
+    if not treenode.is_folder():
         go_to_previous_win()
-        edit('vsplit', line)
+        edit('vsplit', treenode)
 
 
 def open_recusively(treenode):
@@ -274,15 +271,19 @@ def open_recusively(treenode):
 
 
 def cmd_O():
-    line = get_cur_line()
-    if line.treenode.is_folder():
-        open_recusively(line.treenode)
+    treenode = get_cur_line()
+    if treenode is None:
+        return
+    if treenode.is_folder():
+        open_recusively(treenode)
         render()
 
 
 def cmd_x():
-    line = get_cur_line()
-    treenode = line.treenode.parent
+    treenode = get_cur_line()
+    if treenode is None:
+        return
+    treenode = treenode.parent
     while treenode is not None and not treenode.is_folder():
         treenode = treenode.parent
 
@@ -326,6 +327,6 @@ def cmd_q():
 
 
 def cmd_question_mark():
-    joplin_help = current_help()
+    joplin_help = has_help()
     vim.current.buffer.vars['joplin_help'] = not joplin_help
     render()
