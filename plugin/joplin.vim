@@ -1,9 +1,11 @@
-if !has('pythonx')
+if v:version < 800
+  echom 'Joplin needs vim 8.0+'
   finish
 endif
 
-if !exists('g:joplin_window_name')
-  let g:joplin_window_name = 'tree.joplin'
+if !has('pythonx')
+  echom 'Joplin needs vim support pythonx, see :help pythonx'
+  finish
 endif
 
 command JoplinOpen call joplin#open()
