@@ -6,7 +6,6 @@ import joplin
 import tree
 import os
 import sys
-from node import NoteNode
 
 _treenodes = None
 _show_help = False
@@ -137,6 +136,10 @@ def _bufname():
     return 'joplin.tree'
 
 
+def help_len():
+    return len(_help_lines) if has_help() else 0
+
+
 def render():
     global _treenodes
     global _lines
@@ -148,7 +151,7 @@ def render():
     vim.current.buffer.options['modifiable'] = True
     vim.current.buffer[:] = helptext + cur
     vim.current.buffer.options['modifiable'] = False
-    helplen = len(helptext)
+    helplen = help_len()
     for i, line in enumerate(lines):
         line.lineno = helplen + i + 1
 
@@ -319,7 +322,10 @@ def cmd_X():
 
 
 def cmd_P():
-    pass
+    treenode = get_cur_line()
+    while treenode.parent is not None:
+        treenode = treenode.parent
+    cursor(treenode)
 
 
 def cmd_p():
