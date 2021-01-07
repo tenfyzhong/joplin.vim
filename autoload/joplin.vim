@@ -7,10 +7,14 @@ if pwd not in sys.path:
 import jplvim
 EOF
 
-function! joplin#open_window()
+function! joplin#open()
   pythonx jplvim.open_window()
 endfunction
 
-function! joplin#open()
-  pythonx jplvim.open()
+function! joplin#close()
+  pythonx jplvim.close_window()
+endfunction
+
+function! joplin#toggle()
+  pythonx jplvim.toggle_window()
 endfunction

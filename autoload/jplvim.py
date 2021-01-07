@@ -88,6 +88,15 @@ def close_window():
         vim.command('%dclose' % winnr)
 
 
+def toggle_window():
+    bufname_ = bufname()
+    winnr = vim.Function('bufwinnr')(bufname_)
+    if winnr > 0:
+        vim.command('%dclose' % winnr)
+    else:
+        open_window()
+
+
 def set_options():
     vim.current.buffer.options['bufhidden'] = 'hide'
     vim.current.buffer.options['buftype'] = 'nofile'

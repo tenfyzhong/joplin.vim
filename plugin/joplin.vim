@@ -11,4 +11,6 @@ if !exists('g:tagbar_iconchars')
   endif
 endif
 
-command Joplin call joplin#open_window()
+command JoplinOpen call joplin#open()
+command JoplinClose call joplin#close()
+command Joplin call joplin#toggle()
