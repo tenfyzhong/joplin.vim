@@ -329,7 +329,9 @@ def cmd_P():
 
 
 def cmd_p():
-    pass
+    treenode = get_cur_line()
+    treenode = treenode.parent if treenode.parent is not None else treenode
+    cursor(treenode)
 
 
 def cmd_K():
