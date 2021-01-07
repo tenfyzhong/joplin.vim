@@ -23,6 +23,11 @@ _joplin_icon_todo = vim.vars.get('joplin_icon_todo', b'[ ]').decode()
 _joplin_icon_completed = vim.vars.get('joplin_icon_completed', b'[x]').decode()
 _joplin_icon_note = vim.vars.get('joplin_icon_note', b'').decode()
 
+_window_title = [
+    int((_joplin_window_width - 10) / 2) * '=' + ' Joplin ' + int(
+        (_joplin_window_width - 10) / 2) * '=',
+]
+
 _help_lines = [
     '# Joplin quickhelp',
     '# ' + (_joplin_window_width - 2) * '='
@@ -56,7 +61,6 @@ _help_lines = [
     '# Other mappings~',
     '# q: Close the Joplin window',
     '# ?: toggle help',
-    '# ' + (_joplin_window_width - 2) * '=',
     '',
 ]
 
@@ -181,23 +185,28 @@ def help_len():
     return len(_help_lines) if has_help() else 0
 
 
+def base_line():
+    return len(_window_title) + (len(_help_lines) if has_help() else 0)
+
+
 def render():
     global _treenodes
     global _lines
     if _treenodes is None:
         _treenodes = tree.construct_folder_tree(get_joplin())
     lines = note_text(_treenodes, 0)
+    title_text = _window_title
     helptext = _help_lines if has_help() else []
     cur = list([
         line.text(_joplin_icon_open, _joplin_icon_close, _joplin_icon_note,
                   _joplin_icon_todo, _joplin_icon_completed) for line in lines
     ])
     vim.current.buffer.options['modifiable'] = True
-    vim.current.buffer[:] = helptext + cur
+    vim.current.buffer[:] = helptext + title_text + cur
     vim.current.buffer.options['modifiable'] = False
-    helplen = help_len()
+    base = base_line()
     for i, line in enumerate(lines):
-        line.lineno = helplen + i + 1
+        line.lineno = base + i + 1
 
 
 def note_text(nodes, indent):
@@ -216,8 +225,9 @@ def has_help():
 
 
 def get_cur_line():
-    base_line = len(_help_lines) if has_help() else 0
-    lineno = int(vim.eval('line(".")')) - base_line
+    lineno = int(vim.eval('line(".")'))
+    if lineno <= base_line():
+        return None
     return find_treenode(_treenodes, lineno)
 
 
@@ -368,6 +378,8 @@ def cmd_X():
 
 def cmd_P():
     treenode = get_cur_line()
+    if treenode is None:
+        return
     while treenode.parent is not None:
         treenode = treenode.parent
     cursor(treenode)
@@ -375,12 +387,16 @@ def cmd_P():
 
 def cmd_p():
     treenode = get_cur_line()
+    if treenode is None:
+        return
     treenode = treenode.parent if treenode.parent is not None else treenode
     cursor(treenode)
 
 
 def cmd_K():
     treenode = get_cur_line()
+    if treenode is None:
+        return
     nodes = treenode.parent.children if \
         treenode.parent is not None else \
         _treenodes
@@ -390,6 +406,8 @@ def cmd_K():
 
 def cmd_J():
     treenode = get_cur_line()
+    if treenode is None:
+        return
     nodes = treenode.parent.children if \
         treenode.parent is not None else \
         _treenodes
@@ -399,6 +417,8 @@ def cmd_J():
 
 def cmd_ctrl_j():
     treenode = get_cur_line()
+    if treenode is None:
+        return
     nodes = treenode.parent.children if \
         treenode.parent is not None else \
         _treenodes
@@ -409,6 +429,8 @@ def cmd_ctrl_j():
 
 def cmd_ctrl_k():
     treenode = get_cur_line()
+    if treenode is None:
+        return
     nodes = treenode.parent.children if \
         treenode.parent is not None else \
         _treenodes
