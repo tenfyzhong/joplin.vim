@@ -137,6 +137,13 @@ _mapping_dict = {
 
 
 def set_map():
+    unmap = [
+        'r', 'R', '<C-r>', 'u', 'U', 'I', 'a', 'A', 's', 'S', 'd', 'D', 'c',
+        'C'
+    ]
+    for lhs in unmap:
+        cmd = 'nnoremap <script><silent><buffer>%s <nop>' % lhs
+        vim.command(cmd)
     for lhs, rhs in _mapping_dict.items():
         cmd = 'nnoremap <script><silent><buffer>%s <esc>:<c-u>pythonx jplvim.%s()<cr>' % (
             lhs, rhs)
