@@ -21,6 +21,7 @@ _joplin_icon_open = vim.vars.get('joplin_icon_open', b'-').decode()
 _joplin_icon_close = vim.vars.get('joplin_icon_close', b'+').decode()
 _joplin_icon_todo = vim.vars.get('joplin_icon_todo', b'[ ]').decode()
 _joplin_icon_completed = vim.vars.get('joplin_icon_completed', b'[x]').decode()
+_joplin_icon_note = vim.vars.get('joplin_icon_note', b'').decode()
 
 _help_lines = [
     '# Joplin quickhelp',
@@ -174,7 +175,6 @@ def set_map():
 
 def bufname():
     return 'tree.joplin'
-    # return vim.vars['joplin_window_name']
 
 
 def help_len():
@@ -189,8 +189,8 @@ def render():
     lines = note_text(_treenodes, 0)
     helptext = _help_lines if has_help() else []
     cur = list([
-        line.text(_joplin_icon_open, _joplin_icon_close, _joplin_icon_todo,
-                  _joplin_icon_completed) for line in lines
+        line.text(_joplin_icon_open, _joplin_icon_close, _joplin_icon_note,
+                  _joplin_icon_todo, _joplin_icon_completed) for line in lines
     ])
     vim.current.buffer.options['modifiable'] = True
     vim.current.buffer[:] = helptext + cur
