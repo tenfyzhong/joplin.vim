@@ -76,9 +76,7 @@ def get_joplin():
 
 
 def open_window():
-    """TODO: Docstring for new_window.
-    :returns: TODO
-
+    """open joplin window
     """
     bufname_ = bufname()
     winnr = vim.eval('bufwinnr("%s")' % bufname_)

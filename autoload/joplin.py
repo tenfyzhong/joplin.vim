@@ -29,7 +29,7 @@ class Joplin(object):
 
         :query: the keyword to search
         :typ: search special type
-        :returns: TODO
+        :returns: search nodes
 
         """
         path = '/search'
@@ -47,7 +47,7 @@ class Joplin(object):
             url += '&%s=%s' % (k, str(v))
         r = requests.get(url)
         if r.status_code != 200:
-            print(r.status_code, r.text)
+            print('Joplin:', url, r.status_code, r.text)
             return None, False
         json = r.json()
         items = json['items']
@@ -92,7 +92,7 @@ class Joplin(object):
                                                self.token, fields)
         r = requests.get(url)
         if r.status_code != 200:
-            print(url, r.status_code, r.text)
+            print('Joplin:', url, r.status_code, r.text)
             return None
         json = r.json()
         return cls(**json)
@@ -107,7 +107,7 @@ class Joplin(object):
         url = '%s/%s?token=%s' % (self.base_url, o.path(), self.token)
         r = requests.post(url, json=o.dict())
         if r.status_code != 200:
-            print(r.status_code, r.text)
+            print('Joplin:', url, r.status_code, r.text)
             return None
         return o.new(**r.json())
 
@@ -120,7 +120,7 @@ class Joplin(object):
         url = '%s/%s/%s?token=%s' % (self.base_url, o.path(), o.id, self.token)
         r = requests.put(url, json=o.dict())
         if r.status_code != 200:
-            print(r.status_code, r.text)
+            print('Joplin:', url, r.status_code, r.text)
             return None
         return o.new(**r.json())
 
@@ -135,7 +135,7 @@ class Joplin(object):
         url = '%s/%s/%s?token=%s' % (self.base_url, cls.path(), id, self.token)
         r = requests.delete(url)
         if r.status_code != 200:
-            print(r.status_code, r.text)
+            print('Joplin:', url, r.status_code, r.text)
 
     def get_note_tags(self, id, order_by='updated_time', order_dir='DESC'):
         """Gets all the tags attached to this note
@@ -191,7 +191,7 @@ class Joplin(object):
         url = '%s/resources/%s/file?token=%s' % (self.base_url, id, self.token)
         r = requests.get(url)
         if r.status_code != 200:
-            print(r.status_code, r.text)
+            print('Joplin:', url, r.status_code, r.text)
             return None
         return r.text
 
@@ -226,7 +226,7 @@ class Joplin(object):
                           files={'data': open(filename, 'rb')},
                           data=payload)
         if r.status_code != 200:
-            print(r.status_code, r.text)
+            print('Joplin:', url, r.status_code, r.text)
             return None
         j = r.json()
         return ResourceNode(**j)
@@ -256,7 +256,7 @@ class Joplin(object):
         payload = {'id': note_id}
         r = requests.post(url, json=payload)
         if r.status_code != 200:
-            print(r.status_code, r.text)
+            print('Joplin:', url, r.status_code, r.text)
 
     def delete_tag_note(self, id, note_id):
         """Remove the tag from the note
@@ -270,11 +270,4 @@ class Joplin(object):
                                                 self.token)
         r = requests.delete(url)
         if r.status_code != 200:
-            print(r.status_code, r.text)
-
-
-# if __name__ == '__main__':
-#     token = os.environ['JOPLIN_TOKEN']
-#     assert token != ''
-#     j = Joplin(token)
-#     print(j.search('广*'))
+            print('Joplin:', url, r.status_code, r.text)
