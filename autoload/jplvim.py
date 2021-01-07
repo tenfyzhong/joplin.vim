@@ -46,7 +46,7 @@ _help_lines = [
     '# P: go to root',
     '# p: go to parent',
     '# K: go to first child',
-    '# J: goto last child',
+    '# J: go to last child',
     '# <C-j>: go to next sibling',
     '# <C-k>: go to prev sibling',
     '#',
@@ -339,6 +339,39 @@ def cmd_K():
     nodes = treenode.parent.children if \
         treenode.parent is not None else \
         _treenodes
+    if len(nodes) > 0:
+        cursor(nodes[0])
+
+
+def cmd_J():
+    treenode = get_cur_line()
+    nodes = treenode.parent.children if \
+        treenode.parent is not None else \
+        _treenodes
+    if len(nodes) > 0:
+        cursor(nodes[-1])
+
+
+def cmd_ctrl_j():
+    treenode = get_cur_line()
+    nodes = treenode.parent.children if \
+        treenode.parent is not None else \
+        _treenodes
+    i = 0
+    while i < len(nodes):
+        if nodes[i] == treenode:
+            break
+        i += 1
+
+    if i + 1 < len(nodes):
+        cursor(nodes[i + 1])
+
+
+def cmd_ctrl_k():
+    treenode = get_cur_line()
+    nodes = treenode.parent.children if \
+        treenode.parent is not None else \
+        _treenodes
     i = 0
     while i < len(nodes):
         if nodes[i] == treenode:
@@ -347,18 +380,6 @@ def cmd_K():
 
     if i - 1 >= 0:
         cursor(nodes[i - 1])
-
-
-def cmd_J():
-    pass
-
-
-def cmd_ctrl_j():
-    pass
-
-
-def cmd_ctrl_k():
-    pass
 
 
 def cmd_q():
