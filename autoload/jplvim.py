@@ -239,7 +239,7 @@ def find_treenode(nodes, lineno):
 
     mid = i if nodes[i].lineno < lineno else i - 1
     return find_treenode(nodes[mid].children,
-                         lineno) if nodes[i].is_folder() else None
+                         lineno) if nodes[mid].is_folder() else None
 
 
 def edit(command, treenode):
