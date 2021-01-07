@@ -4,6 +4,7 @@
 
 # from joplin import Joplin
 from node import FolderNode, NoteNode
+from operator import attrgetter
 
 
 class TreeNode(object):
@@ -39,12 +40,27 @@ class TreeNode(object):
         line = self.indent * '  ' + sign + self.node.title
         return line
 
-    def open(self, joplin):
+    def open(
+            self,
+            joplin,
+            pin_todo,
+            hide_completed,
+            folder_order_by,
+            folder_order_desc,
+            note_order_by,
+            note_order_desc):
         if not self.is_folder():
             return
         self._open = True
         if not self.fetched or self.dirty:
-            self.fetch(joplin)
+            self.fetch_folder(
+                joplin,
+                pin_todo,
+                hide_completed,
+                folder_order_by,
+                folder_order_desc,
+                note_order_by,
+                note_order_desc)
 
     def close(self):
         if not self.is_folder():
@@ -57,28 +73,58 @@ class TreeNode(object):
     def is_folder(self):
         return isinstance(self.node, FolderNode)
 
-    def fetch(self, joplin):
+    def fetch_note(self, joplin):
+        if self.is_folder():
+            return
+        note = joplin.get(NoteNode, self.node.id)
+        self.node = note
+
+    def fetch_folder(
+            self,
+            joplin,
+            pin_todo,
+            hide_completed,
+            folder_order_by,
+            folder_order_desc,
+            note_order_by,
+            note_order_desc):
         """Fetch all notes from joplin
         :joplin: joplin instance
         """
-        if self.is_folder():
+        if not self.is_folder():
+            return
             # remove notes
-            self.children = list([
-                node for node in self.children
-                if isinstance(node.node, FolderNode)
-            ])
-            notes = joplin.get_folder_notes(self.node.id)
-            nodes = list([TreeNode(note) for note in notes])
-            for node in nodes:
-                node.parent = self
-            self.children += nodes
-            self.fetched = True
-            self.dirty = False
-            for i, node in enumerate(self.children):
-                node.child_index_of_parent = i
+        folders = list([node.node for node in self.children])
+        folders = sorted(
+            folders,
+            key=attrgetter(folder_order_by),
+            reverse=folder_order_desc)
+        tree_folders = list([TreeNode(folder) for folder in folders])
+        todo_notes = joplin.get_folder_notes(self.node.id)
+        if hide_completed:
+            todo_notes = list(filter(lambda node: not node.todo_completed,
+                                     todo_notes))
+        if pin_todo:
+            todos = list(filter(lambda node: node.is_todo and
+                                not node.todo_completed, todo_notes))
+            todos = sorted(todos, key=attrgetter(note_order_by),
+                           reverse=note_order_desc)
+            notes = list(filter(lambda node: not node.is_todo or
+                                node.todo_completed, todo_notes))
+            notes = sorted(notes, key=attrgetter(note_order_by),
+                           reverse=note_order_desc)
+            todo_notes = todos + notes
         else:
-            note = joplin.get(NoteNode, self.node.id)
-            self.node = note
+            todo_notes = sorted(todo_notes, key=attrgetter(note_order_by),
+                                reverse=note_order_desc)
+        tree_notes = list([TreeNode(note) for note in todo_notes])
+        for note in tree_notes:
+            note.parent = self
+        self.children = tree_folders + tree_notes
+        self.fetched = True
+        self.dirty = False
+        for i, node in enumerate(self.children):
+            node.child_index_of_parent = i
 
     def prop_type(self):
         if self.is_folder():
@@ -91,7 +137,7 @@ class TreeNode(object):
             return ''
 
 
-def construct_folder_tree(joplin):
+def construct_folder_tree(joplin, order_by, order_desc):
     """construct folder tree
 
     :returns: TreeNodes
@@ -99,6 +145,7 @@ def construct_folder_tree(joplin):
     """
     # folders
     folders = joplin.get_all(FolderNode)
+    folders = sorted(folders, key=attrgetter(order_by), reverse=order_desc)
     nodes = list([TreeNode(folder) for folder in folders])
     d = dict({node.node.id: node for node in nodes})
     for node in nodes:

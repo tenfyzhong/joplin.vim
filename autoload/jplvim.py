@@ -16,24 +16,21 @@ _j = None
 
 _joplin_token = vim.vars.get('joplin_token', b'').decode()
 _joplin_host = vim.vars.get('joplin_host', b'127.0.0.1').decode()
-_joplin_port = int(vim.vars.get('joplin_port', b'41184').decode())
-_joplin_window_width = int(vim.vars.get('joplin_window_width', b'30').decode())
+_joplin_port = vim.vars.get('joplin_port', 41184)
+_joplin_window_width = vim.vars.get('joplin_window_width', 30)
 _joplin_icon_open = vim.vars.get('joplin_icon_open', b'-').decode()
 _joplin_icon_close = vim.vars.get('joplin_icon_close', b'+').decode()
 _joplin_icon_todo = vim.vars.get('joplin_icon_todo', b'[ ]').decode()
 _joplin_icon_completed = vim.vars.get('joplin_icon_completed', b'[x]').decode()
 _joplin_icon_note = vim.vars.get('joplin_icon_note', b'').decode()
-_joplin_pin_todo = int(vim.vars.get('joplin_pin_todo', b'1').decode())
-_joplin_hide_complete = int(
-    vim.vars.get('_joplin_hide_complete', b'0').decode())
-_joplin_order_by_notebook = vim.vars.get('joplin_order_by_notebook',
-                                         b'title').decode()
-_joplin_order_desc_notebook = int(
-    vim.vars.get('joplin_order_desc_notebook', b'0').decode())
-_joplin_order_by_note = vim.vars.get('joplin_order_by_note',
+_joplin_pin_todo = vim.vars.get('joplin_pin_todo', 1)
+_joplin_hide_completed = vim.vars.get('joplin_hide_completed', 0)
+_joplin_folder_order_by = vim.vars.get('joplin_notebook_order_by',
+                                       b'title').decode()
+_joplin_folder_order_desc = vim.vars.get('joplin_notebook_order_desc', 0)
+_joplin_note_order_by = vim.vars.get('joplin_note_order_by',
                                      b'updated_time').decode()
-_joplin_order_desc_note = int(
-    vim.vars.get('joplin_order_desc_note', b'0').decode())
+_joplin_note_order_desc = vim.vars.get('joplin_note_order_desc', 0)
 
 _window_title = [
     int((_joplin_window_width - 11) / 2) * '=' + ' Joplin ' + int(
@@ -256,7 +253,10 @@ def render_title(nr):
 def render_nodes(nr):
     global _treenodes
     if _treenodes is None:
-        _treenodes = tree.construct_folder_tree(get_joplin())
+        _treenodes = tree.construct_folder_tree(
+            get_joplin(),
+            _joplin_folder_order_by,
+            _joplin_folder_order_desc)
     lines = note_text(_treenodes, 0)
     for line in lines:
         vim.current.buffer.append(
@@ -343,7 +343,7 @@ def edit(command, treenode):
     filename = dirname + '/' + treenode.node.title + '.md'
     vim.command('silent %s %s' % (command, filename))
     set_editting_note_id(treenode.node.id)
-    treenode.fetch(get_joplin())
+    treenode.fetch_note(get_joplin())
     vim.current.buffer[:] = treenode.node.body.split('\n')
     vim.command('silent noautocmd w')
     vim.options['lazyredraw'] = lazyredraw_saved
@@ -371,7 +371,14 @@ def cmd_o():
         if treenode.is_open():
             treenode.close()
         else:
-            treenode.open(get_joplin())
+            treenode.open(
+                get_joplin(),
+                _joplin_pin_todo,
+                _joplin_hide_completed,
+                _joplin_folder_order_by,
+                _joplin_folder_order_desc,
+                _joplin_note_order_by,
+                _joplin_note_order_desc)
         saved_pos = vim.eval('getcurpos()')
         render()
         vim.Function('setpos')('.', saved_pos)
@@ -409,7 +416,14 @@ def cmd_s():
 
 def open_recusively(treenode):
     if treenode.is_folder() and not treenode.is_open():
-        treenode.open(get_joplin())
+        treenode.open(
+                get_joplin(),
+                _joplin_pin_todo,
+                _joplin_hide_completed,
+                _joplin_folder_order_by,
+                _joplin_folder_order_desc,
+                _joplin_note_order_by,
+                _joplin_note_order_desc)
 
     for child in treenode.children:
         open_recusively(child)

@@ -45,6 +45,12 @@ class Joplin(object):
         url = '%s%s?token=%s&page=%d' % (self.base_url, path, self.token, page)
         for k, v in kwargs.items():
             url += '&%s=%s' % (k, str(v))
+
+        # fetch all data with body
+        # the body is to large and useless
+        fields = list(filter(lambda field: field != 'body', cls().fields()))
+        fields_str = ','.join(fields)
+        url += '&fields=' + fields_str
         r = requests.get(url)
         if r.status_code != 200:
             print('Joplin:', url, r.status_code, r.text)
@@ -161,12 +167,10 @@ class Joplin(object):
 
         """
         path = '/notes/%s/resources' % id
-        fields = ','.join(ResourceNode().fields())
         return self._get_by_path(ResourceNode,
                                  path,
                                  order_by=order_by,
-                                 order_dir=order_dir,
-                                 fields=fields)
+                                 order_dir=order_dir)
 
     def get_folder_notes(self, id, order_by='updated_time', order_dir='DESC'):
         """Gets all notes inside this folder
@@ -175,13 +179,11 @@ class Joplin(object):
         :returns: NoteNode
 
         """
-        fields = 'id,parent_id,title,is_todo,todo_completed'
         path = '/folders/%s/notes' % id
         return self._get_by_path(NoteNode,
                                  path,
                                  order_by=order_by,
-                                 order_dir=order_dir,
-                                 fields=fields)
+                                 order_dir=order_dir)
 
     def get_resource_file(self, id):
         """Gets the actual file associated with this resource

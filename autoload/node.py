@@ -33,7 +33,7 @@ class Node(object):
         self.type_ = kwargs.get('type_', 0)
 
     def fields(self):
-        return [v for v in vars(self).keys() if not v.endswith('_')]
+        return list([v for v in vars(self).keys() if not v.endswith('_')])
 
     def __str__(self):
         return str(self.dict())
