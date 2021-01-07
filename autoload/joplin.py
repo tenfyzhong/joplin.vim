@@ -92,7 +92,7 @@ class Joplin(object):
                                                self.token, fields)
         r = requests.get(url)
         if r.status_code != 200:
-            print(r.status_code, r.text)
+            print(url, r.status_code, r.text)
             return None
         json = r.json()
         return cls(**json)
@@ -138,7 +138,7 @@ class Joplin(object):
             print(r.status_code, r.text)
 
     def get_note_tags(self, id, order_by='updated_time', order_dir='DESC'):
-        """Gets all the tags attached to this note 
+        """Gets all the tags attached to this note
 
         :id: note's id
         :returns: TagNodes, has_more

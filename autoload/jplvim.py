@@ -6,6 +6,7 @@ import joplin
 import tree
 import os
 import sys
+from node import NoteNode
 
 _treenodes = None
 _show_help = False
@@ -90,6 +91,19 @@ def toggle_window():
         vim.command('%dclose' % winnr)
     else:
         open_window()
+
+
+def write():
+    joplin_note_id = vim.current.buffer.vars.get('joplin_note_id', '').decode()
+    if joplin_note_id == '':
+        return
+
+    note = j.get(NoteNode, joplin_note_id)
+    if note is None:
+        return
+
+    note.body = '\n'.join(vim.current.buffer[:])
+    j.put(note)
 
 
 def set_options():
@@ -229,6 +243,7 @@ def edit(command, treenode):
     vim.current.buffer[:] = treenode.node.body.split('\n')
     vim.command('silent noautocmd w')
     vim.options['lazyredraw'] = lazyredraw_saved
+    vim.command('autocmd BufWritePost <buffer> pythonx jplvim.write()')
 
 
 def go_to_previous_win():
