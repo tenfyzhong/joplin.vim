@@ -262,8 +262,19 @@ def cmd_s():
         edit('vsplit', line)
 
 
+def open_recusively(treenode):
+    if treenode.is_folder() and not treenode.is_open():
+        treenode.open(j)
+
+    for child in treenode.children:
+        open_recusively(child)
+
+
 def cmd_O():
-    pass
+    line = get_cur_line()
+    if line.treenode.is_folder():
+        open_recusively(line.treenode)
+        render()
 
 
 def cmd_x():
