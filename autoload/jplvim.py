@@ -217,6 +217,11 @@ def go_to_previous_win():
         vim.command('wincmd w')
 
 
+def cursor(treenode):
+    if treenode.lineno > 0:
+        vim.Function('cursor')(treenode.lineno, 1)
+
+
 def cmd_o():
     global _saved_winnr
     treenode = get_cur_line()
@@ -292,12 +297,25 @@ def cmd_x():
     if treenode is not None:
         treenode.close()
         render()
-        if treenode.lineno > 0:
-            vim.Function('cursor')(treenode.lineno, 1)
+        cursor(treenode)
+
+
+def close_recurisive(node):
+    if not node.is_folder() or not node.is_open():
+        return
+
+    node.close()
+    for child in node.children:
+        close_recurisive(child)
 
 
 def cmd_X():
-    pass
+    treenode = get_cur_line()
+    if not treenode.is_folder():
+        return
+    close_recurisive(treenode)
+    render()
+    cursor(treenode)
 
 
 def cmd_P():
