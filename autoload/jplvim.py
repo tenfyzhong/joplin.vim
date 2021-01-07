@@ -6,6 +6,7 @@ import joplin
 import tree
 import os
 import sys
+import re
 from node import NoteNode
 
 _treenodes = None
@@ -24,13 +25,13 @@ _joplin_icon_completed = vim.vars.get('joplin_icon_completed', b'[x]').decode()
 _joplin_icon_note = vim.vars.get('joplin_icon_note', b'').decode()
 
 _window_title = [
-    int((_joplin_window_width - 10) / 2) * '=' + ' Joplin ' + int(
-        (_joplin_window_width - 10) / 2) * '=',
+    int((_joplin_window_width - 11) / 2) * '=' + ' Joplin ' + int(
+        (_joplin_window_width - 11) / 2) * '=',
 ]
 
 _help_lines = [
-    '# Joplin quickhelp',
-    '# ' + (_joplin_window_width - 2) * '='
+    '# Joplin quickhelp~',
+    '# ' + (_joplin_window_width - 2) * '=',
     '# Note node mappings~',
     '# doublick-click: open in prev window',
     '# <CR>: open in prev window',
@@ -38,7 +39,7 @@ _help_lines = [
     '# t: open in new tab',
     '# i: open split',
     '# s: open vsplit',
-    '#',
+    '# ',
     '# ' + (_joplin_window_width - 2) * '-',
     '# Notebook node mappings~',
     '# double-click: open & close node',
@@ -47,22 +48,37 @@ _help_lines = [
     '# O: recursively open node',
     '# x: close parent of node',
     '# X: close all child nodes of current node recursively',
-    '#',
+    '# ',
     '# ' + (_joplin_window_width - 2) * '-',
-    '# Tree navigation mappings~'
+    '# Tree navigation mappings~',
     '# P: go to root',
     '# p: go to parent',
     '# K: go to first child',
     '# J: go to last child',
     '# <C-j>: go to next sibling',
     '# <C-k>: go to prev sibling',
-    '#',
+    '# ',
     '# ' + (_joplin_window_width - 2) * '-',
     '# Other mappings~',
     '# q: Close the Joplin window',
     '# ?: toggle help',
     '',
 ]
+
+props = {
+    'joplin_folder': 'Identifier',
+    'joplin_todo': 'Todo',
+    'joplin_completed': 'Comment',
+    'joplin_help_title': 'Define',
+    'joplin_window_title': 'Constant',
+    'joplin_help_keyword': 'Identifier',
+    'joplin_help_summary': 'String',
+    'joplin_help_sperate': 'String',
+    'joplin_help_prefix': 'String',
+}
+
+for name, highlight in props.items():
+    vim.Function('prop_type_add')(name, {'highlight': highlight})
 
 
 def get_joplin():
@@ -189,24 +205,71 @@ def base_line():
     return len(_window_title) + (len(_help_lines) if has_help() else 0)
 
 
-def render():
+def prop_add(nr, prop_type, col_begin=1, col_end=0):
+    if prop_type == '':
+        return
+    vim.Function('cursor')(nr, 1)
+    if col_end == 0:
+        col_end = vim.Function('col')('$')
+    vim.Function('prop_add')(nr, col_begin, {
+        'end_col': col_end,
+        'type': prop_type,
+    })
+
+
+def render_help(nr):
+    help_lines = _help_lines if has_help() else []
+    for text in help_lines:
+        vim.current.buffer.append(text, nr)
+        prop_add(nr + 1, 'joplin_help_prefix', 1, 3)
+        if re.match(r'^# =+$|^# -+$', text):
+            prop_add(nr + 1, 'joplin_help_sperate', 3)
+        elif re.match(r'^# .*~$', text):
+            prop_add(nr + 1, 'joplin_help_title', 3)
+        elif re.match(r'^# [^:]*:.*$', text):
+            vim.Function('cursor')(nr + 1, 1)
+            vim.command('noautocmd normal f:')
+            col = vim.Function('col')('.')
+            prop_add(nr + 1, 'joplin_help_keyword', 3, col)
+            prop_add(nr + 1, 'joplin_help_summary', col)
+        nr += 1
+    return nr
+
+
+def render_title(nr):
+    for text in _window_title:
+        vim.current.buffer.append(text, nr)
+        prop_add(nr + 1, 'joplin_window_title')
+        nr += 1
+    return nr
+
+
+def render_nodes(nr):
     global _treenodes
-    global _lines
     if _treenodes is None:
         _treenodes = tree.construct_folder_tree(get_joplin())
     lines = note_text(_treenodes, 0)
-    title_text = _window_title
-    helptext = _help_lines if has_help() else []
-    cur = list([
-        line.text(_joplin_icon_open, _joplin_icon_close, _joplin_icon_note,
-                  _joplin_icon_todo, _joplin_icon_completed) for line in lines
-    ])
+    for line in lines:
+        vim.current.buffer.append(
+            line.text(_joplin_icon_open, _joplin_icon_close, _joplin_icon_note,
+                      _joplin_icon_todo, _joplin_icon_completed), nr)
+        line.lineno = nr + 1
+        prop_type = line.prop_type()
+        prop_add(nr + 1, prop_type)
+        nr += 1
+    return nr
+
+
+def render():
     vim.current.buffer.options['modifiable'] = True
-    vim.current.buffer[:] = helptext + title_text + cur
+    del vim.current.buffer[:]
+    nr = 0
+    nr = render_help(nr)
+    nr = render_title(nr)
+    nr = render_nodes(nr)
+    # delete empty line
+    del vim.current.buffer[nr]
     vim.current.buffer.options['modifiable'] = False
-    base = base_line()
-    for i, line in enumerate(lines):
-        line.lineno = base + i + 1
 
 
 def note_text(nodes, indent):
@@ -340,6 +403,7 @@ def cmd_O():
     if treenode.is_folder():
         open_recusively(treenode)
         render()
+        cursor(treenode)
 
 
 def cmd_x():
@@ -447,3 +511,4 @@ def cmd_question_mark():
     joplin_help = has_help()
     vim.current.buffer.vars['joplin_help'] = not joplin_help
     render()
+    vim.Function('cursor')(1, 1)

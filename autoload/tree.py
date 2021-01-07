@@ -80,6 +80,16 @@ class TreeNode(object):
             note = joplin.get(NoteNode, self.node.id)
             self.node = note
 
+    def prop_type(self):
+        if self.is_folder():
+            return 'joplin_folder'
+        elif self.node.is_todo:
+            return 'joplin_completed' if \
+                self.node.todo_completed else \
+                'joplin_todo'
+        else:
+            return ''
+
 
 def construct_folder_tree(joplin):
     """construct folder tree
