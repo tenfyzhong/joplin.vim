@@ -133,7 +133,7 @@ def set_map():
 
 
 def _bufname():
-    return 'joplin.tree'
+    return 'tree.joplin'
 
 
 def help_len():
@@ -373,7 +373,10 @@ def cmd_ctrl_k():
 
 
 def cmd_q():
-    pass
+    bufname = _bufname()
+    winnr = vim.Function('bufwinnr')(bufname)
+    if winnr > 0:
+        vim.command('%dclose' % winnr)
 
 
 def cmd_question_mark():
