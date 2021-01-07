@@ -15,6 +15,7 @@ class TreeNode(object):
         self.fetched = False
         self.dirty = False
         self._open = False
+        self.lineno = 0
 
     def __str__(self):
         return str(self.node)
@@ -47,6 +48,8 @@ class TreeNode(object):
         ])
         notes = joplin.get_folder_notes(self.node.id)
         nodes = list([TreeNode(note) for note in notes])
+        for node in nodes:
+            node.parent = self
         self.children += nodes
         self.fetched = True
         self.dirty = False

@@ -170,11 +170,14 @@ def render():
     if _treenodes is None:
         _treenodes = tree.construct_folder_tree(j)
     lines = note_text(_treenodes, 0)
-    text = _help_lines if current_help() else []
+    helptext = _help_lines if current_help() else []
     cur = list([line.text() for line in lines])
     vim.current.buffer.options['modifiable'] = True
-    vim.current.buffer[:] = text + cur
+    vim.current.buffer[:] = helptext + cur
     vim.current.buffer.options['modifiable'] = False
+    helplen = len(helptext)
+    for i, line in enumerate(lines):
+        line.treenode.lineno = helplen + i + 1
     _lines = lines
 
 
@@ -278,7 +281,16 @@ def cmd_O():
 
 
 def cmd_x():
-    pass
+    line = get_cur_line()
+    treenode = line.treenode.parent
+    while treenode is not None and not treenode.is_folder():
+        treenode = treenode.parent
+
+    if treenode is not None:
+        treenode.close()
+        render()
+        if treenode.lineno > 0:
+            vim.Function('cursor')(treenode.lineno, 1)
 
 
 def cmd_X():
