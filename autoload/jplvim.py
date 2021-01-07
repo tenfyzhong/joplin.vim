@@ -9,7 +9,6 @@ import sys
 
 _treenodes = None
 _show_help = False
-_saved_winnr = -1
 _saved_pos = None
 
 width = 30
@@ -64,10 +63,6 @@ def open_window():
     :returns: TODO
 
     """
-    global _saved_winnr
-    global _saved_pos
-    _saved_winnr = int(vim.eval('winnr("#")'))
-    _saved_pos = vim.eval('getcurpos()')
     bufname_ = bufname()
     winnr = vim.eval('bufwinnr("%s")' % bufname_)
     winnr = int(winnr)
@@ -230,8 +225,9 @@ def edit(command, treenode):
 
 
 def go_to_previous_win():
-    if _saved_winnr > 0:
-        vim.command('%dwincmd w' % _saved_winnr)
+    saved_winnr = vim.current.buffer.vars.get('saved_winnr', -1)
+    if saved_winnr > 0:
+        vim.command('%dwincmd w' % saved_winnr)
     else:
         vim.command('wincmd w')
 
@@ -242,7 +238,6 @@ def cursor(treenode):
 
 
 def cmd_o():
-    global _saved_winnr
     treenode = get_cur_line()
     if treenode is None:
         return
