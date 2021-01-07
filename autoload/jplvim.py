@@ -80,6 +80,31 @@ props = {
 for name, highlight in props.items():
     vim.Function('prop_type_add')(name, {'highlight': highlight})
 
+_mapping_dict = {
+    'o': 'cmd_o',
+    '<cr>': 'cmd_o',
+    '<2-LeftMouse>': 'cmd_o',
+    't': 'cmd_t',
+    'T': 'cmd_T',
+    'i': 'cmd_i',
+    's': 'cmd_s',
+    'O': 'cmd_O',
+    'x': 'cmd_x',
+    'X': 'cmd_X',
+    'P': 'cmd_P',
+    'p': 'cmd_p',
+    'K': 'cmd_K',
+    'J': 'cmd_J',
+    '<C-j>': 'cmd_ctrl_j',
+    '<C-k>': 'cmd_ctrl_k',
+    'q': 'cmd_q',
+    '?': 'cmd_question_mark',
+}
+
+_unmap = [
+    'r', 'R', '<C-r>', 'u', 'U', 'I', 'a', 'A', 's', 'S', 'd', 'D', 'c', 'C'
+]
+
 
 def get_joplin():
     global _j
@@ -157,34 +182,8 @@ def set_options():
     vim.current.window.options['cursorline'] = True
 
 
-_mapping_dict = {
-    'o': 'cmd_o',
-    '<cr>': 'cmd_o',
-    '<2-LeftMouse>': 'cmd_o',
-    't': 'cmd_t',
-    'T': 'cmd_T',
-    'i': 'cmd_i',
-    's': 'cmd_s',
-    'O': 'cmd_O',
-    'x': 'cmd_x',
-    'X': 'cmd_X',
-    'P': 'cmd_P',
-    'p': 'cmd_p',
-    'K': 'cmd_K',
-    'J': 'cmd_J',
-    '<C-j>': 'cmd_ctrl_j',
-    '<C-k>': 'cmd_ctrl_k',
-    'q': 'cmd_q',
-    '?': 'cmd_question_mark',
-}
-
-
 def set_map():
-    unmap = [
-        'r', 'R', '<C-r>', 'u', 'U', 'I', 'a', 'A', 's', 'S', 'd', 'D', 'c',
-        'C'
-    ]
-    for lhs in unmap:
+    for lhs in _unmap:
         cmd = 'nnoremap <script><silent><buffer>%s <nop>' % lhs
         vim.command(cmd)
     for lhs, rhs in _mapping_dict.items():
