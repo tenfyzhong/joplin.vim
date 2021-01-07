@@ -283,7 +283,9 @@ def cmd_x():
     treenode = get_cur_line()
     if treenode is None:
         return
-    treenode = treenode.parent
+    treenode = treenode if \
+        treenode.is_folder() and treenode.is_open() else \
+        treenode.parent
     while treenode is not None and not treenode.is_folder():
         treenode = treenode.parent
 
