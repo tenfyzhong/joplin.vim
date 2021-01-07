@@ -25,12 +25,13 @@ class TreeNode(object):
     def __repr__(self):
         return str(self.node)
 
-    def text(self):
+    def text(self, iconopen, iconclose):
         sign = ''
         if not self.is_folder():
             sign = '  '
         else:
-            sign = '- ' if self.is_open() else '+ '
+            sign = iconopen if self.is_open() else iconclose
+            sign += ' '
         line = self.indent * '  ' + sign + self.node.title
         return line
 
@@ -96,22 +97,3 @@ def construct_folder_tree(joplin):
     for i, node in enumerate(nodes):
         node.child_index_of_parent = i
     return nodes
-
-
-# def fetch(joplin, nodes):
-#     for node in nodes:
-#         fetch(joplin, node.children)
-#         node.fetch(joplin)
-
-# def print_nodes(nodes, prefix):
-#     for node in nodes:
-#         print(prefix, node)
-#         print_nodes(node.children, prefix + '--')
-
-# if __name__ == '__main__':
-#     token = os.environ['JOPLIN_TOKEN']
-#     assert token != ''
-#     j = Joplin(token)
-#     nodes = construct_folder_tree(j)
-#     fetch(j, nodes)
-#     print_nodes(nodes, '')

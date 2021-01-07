@@ -11,19 +11,18 @@ from node import NoteNode
 _treenodes = None
 _show_help = False
 _saved_pos = None
+_j = None
 
-width = 30
-
-token = os.environ.get('JOPLIN_TOKEN', '')
-if token == '':
-    print('JOPLIN_TOKEN is empty')
-    sys.exit(-1)
-
-j = joplin.Joplin(token)
+_joplin_token = vim.vars.get('joplin_token', b'').decode()
+_joplin_host = vim.vars.get('joplin_host', b'127.0.0.1').decode()
+_joplin_port = int(vim.vars.get('joplin_port', b'41184').decode())
+_joplin_window_width = int(vim.vars.get('joplin_window_width', b'30').decode())
+_joplin_icon_open = vim.vars.get('joplin_icon_open', b'-').decode()
+_joplin_icon_close = vim.vars.get('joplin_icon_close', b'+').decode()
 
 _help_lines = [
     '# Joplin quickhelp',
-    '# ' + (width - 2) * '='
+    '# ' + (_joplin_window_width - 2) * '='
     '# Note node mappings~',
     '# doublick-click: open in prev window',
     '# <CR>: open in prev window',
@@ -32,7 +31,7 @@ _help_lines = [
     '# i: open split',
     '# s: open vsplit',
     '#',
-    '# ' + (width - 2) * '-',
+    '# ' + (_joplin_window_width - 2) * '-',
     '# Notebook node mappings~',
     '# double-click: open & close node',
     '# <CR>: open & close node',
@@ -41,7 +40,7 @@ _help_lines = [
     '# x: close parent of node',
     '# X: close all child nodes of current node recursively',
     '#',
-    '# ' + (width - 2) * '-',
+    '# ' + (_joplin_window_width - 2) * '-',
     '# Tree navigation mappings~'
     '# P: go to root',
     '# p: go to parent',
@@ -50,13 +49,30 @@ _help_lines = [
     '# <C-j>: go to next sibling',
     '# <C-k>: go to prev sibling',
     '#',
-    '# ' + (width - 2) * '-',
+    '# ' + (_joplin_window_width - 2) * '-',
     '# Other mappings~',
     '# q: Close the Joplin window',
     '# ?: toggle help',
-    '# ' + (width - 2) * '=',
+    '# ' + (_joplin_window_width - 2) * '=',
     '',
 ]
+
+
+def get_joplin():
+    global _j
+    if _j is None:
+        token = vim.vars.get('joplin_token', b'').decode()
+        host = vim.vars.get('joplin_host', b'127.0.0.1').decode()
+        port = int(vim.vars.get('joplin_port', b'41184').decode())
+        if token == '':
+            print('Joplin: g:joplin_token is empty')
+            sys.exit(-1)
+
+        _j = joplin.Joplin(token, host, port)
+        if _j is None:
+            print('Joplin: can not create joplin instance')
+            sys.exit(-1)
+    return _j
 
 
 def open_window():
@@ -71,7 +87,7 @@ def open_window():
         vim.command('win_gotoid("%s")' % winnr)
         return
     vim.command('silent keepalt topleft vertical %d split %s' %
-                (width, bufname_))
+                (_joplin_window_width, bufname_))
     set_options()
     set_map()
     render()
@@ -84,26 +100,18 @@ def close_window():
         vim.command('%dclose' % winnr)
 
 
-def toggle_window():
-    bufname_ = bufname()
-    winnr = vim.Function('bufwinnr')(bufname_)
-    if winnr > 0:
-        vim.command('%dclose' % winnr)
-    else:
-        open_window()
-
-
 def write():
-    joplin_note_id = vim.current.buffer.vars.get('joplin_note_id', '').decode()
+    joplin_note_id = vim.current.buffer.vars.get('joplin_note_id',
+                                                 b'').decode()
     if joplin_note_id == '':
         return
 
-    note = j.get(NoteNode, joplin_note_id)
+    note = get_joplin().get(NoteNode, joplin_note_id)
     if note is None:
         return
 
     note.body = '\n'.join(vim.current.buffer[:])
-    j.put(note)
+    get_joplin().put(note)
 
 
 def set_options():
@@ -166,6 +174,7 @@ def set_map():
 
 def bufname():
     return 'tree.joplin'
+    # return vim.vars['joplin_window_name']
 
 
 def help_len():
@@ -176,10 +185,11 @@ def render():
     global _treenodes
     global _lines
     if _treenodes is None:
-        _treenodes = tree.construct_folder_tree(j)
+        _treenodes = tree.construct_folder_tree(get_joplin())
     lines = note_text(_treenodes, 0)
     helptext = _help_lines if has_help() else []
-    cur = list([line.text() for line in lines])
+    cur = list(
+        [line.text(_joplin_icon_open, _joplin_icon_close) for line in lines])
     vim.current.buffer.options['modifiable'] = True
     vim.current.buffer[:] = helptext + cur
     vim.current.buffer.options['modifiable'] = False
@@ -239,7 +249,7 @@ def edit(command, treenode):
     filename = dirname + '/' + treenode.node.title + '.md'
     vim.command('silent %s %s' % (command, filename))
     vim.current.buffer.vars['joplin_note_id'] = treenode.node.id
-    treenode.fetch(j)
+    treenode.fetch(get_joplin())
     vim.current.buffer[:] = treenode.node.body.split('\n')
     vim.command('silent noautocmd w')
     vim.options['lazyredraw'] = lazyredraw_saved
@@ -267,7 +277,7 @@ def cmd_o():
         if treenode.is_open():
             treenode.close()
         else:
-            treenode.open(j)
+            treenode.open(get_joplin())
         saved_pos = vim.eval('getcurpos()')
         render()
         vim.Function('setpos')('.', saved_pos)
@@ -305,7 +315,7 @@ def cmd_s():
 
 def open_recusively(treenode):
     if treenode.is_folder() and not treenode.is_open():
-        treenode.open(j)
+        treenode.open(get_joplin())
 
     for child in treenode.children:
         open_recusively(child)
