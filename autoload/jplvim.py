@@ -335,7 +335,18 @@ def cmd_p():
 
 
 def cmd_K():
-    pass
+    treenode = get_cur_line()
+    nodes = treenode.parent.children if \
+        treenode.parent is not None else \
+        _treenodes
+    i = 0
+    while i < len(nodes):
+        if nodes[i] == treenode:
+            break
+        i += 1
+
+    if i - 1 >= 0:
+        cursor(nodes[i - 1])
 
 
 def cmd_J():
