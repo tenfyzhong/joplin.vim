@@ -3,7 +3,7 @@
 # import os
 
 # from joplin import Joplin
-from node import FolderNode
+from node import FolderNode, NoteNode
 
 
 class TreeNode(object):
@@ -34,15 +34,19 @@ class TreeNode(object):
         return line
 
     def open(self, joplin):
+        if not self.is_folder():
+            return
         self._open = True
         if not self.fetched or self.dirty:
             self.fetch(joplin)
 
     def close(self):
+        if not self.is_folder():
+            return
         self._open = False
 
     def is_open(self):
-        return self._open
+        return self._open and self.is_folder()
 
     def is_folder(self):
         return isinstance(self.node, FolderNode)
@@ -51,18 +55,22 @@ class TreeNode(object):
         """Fetch all notes from joplin
         :joplin: joplin instance
         """
-        # remove notes
-        self.children = list([
-            node for node in self.children
-            if isinstance(node.node, FolderNode)
-        ])
-        notes = joplin.get_folder_notes(self.node.id)
-        nodes = list([TreeNode(note) for note in notes])
-        for node in nodes:
-            node.parent = self
-        self.children += nodes
-        self.fetched = True
-        self.dirty = False
+        if self.is_folder():
+            # remove notes
+            self.children = list([
+                node for node in self.children
+                if isinstance(node.node, FolderNode)
+            ])
+            notes = joplin.get_folder_notes(self.node.id)
+            nodes = list([TreeNode(note) for note in notes])
+            for node in nodes:
+                node.parent = self
+            self.children += nodes
+            self.fetched = True
+            self.dirty = False
+        else:
+            note = joplin.get(NoteNode, self.node.id)
+            self.node = note
 
 
 def construct_folder_tree(joplin):

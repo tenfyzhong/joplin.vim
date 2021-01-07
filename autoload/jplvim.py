@@ -204,8 +204,8 @@ def edit(command, treenode):
     filename = dirname + '/' + treenode.node.title + '.md'
     vim.command('silent %s %s' % (command, filename))
     vim.current.buffer.vars['joplin_note_id'] = treenode.node.id
-    note = j.get(NoteNode, treenode.node.id)
-    vim.current.buffer[:] = note.body.split('\n')
+    treenode.fetch(j)
+    vim.current.buffer[:] = treenode.node.body.split('\n')
     vim.command('silent noautocmd w')
     vim.options['lazyredraw'] = lazyredraw_saved
 
