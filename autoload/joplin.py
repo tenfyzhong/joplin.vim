@@ -175,11 +175,13 @@ class Joplin(object):
         :returns: NoteNode
 
         """
+        fields = 'id,parent_id,title,is_todo,todo_completed'
         path = '/folders/%s/notes' % id
         return self._get_by_path(NoteNode,
                                  path,
                                  order_by=order_by,
-                                 order_dir=order_dir)
+                                 order_dir=order_dir,
+                                 fields=fields)
 
     def get_resource_file(self, id):
         """Gets the actual file associated with this resource

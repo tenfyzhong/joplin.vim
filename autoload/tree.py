@@ -25,10 +25,12 @@ class TreeNode(object):
     def __repr__(self):
         return str(self.node)
 
-    def text(self, iconopen, iconclose):
+    def text(self, iconopen, iconclose, icontodo, iconcompleted):
         sign = ''
         if not self.is_folder():
             sign = '  '
+            if self.node.is_todo:
+                sign += iconcompleted if self.node.todo_completed else icontodo
         else:
             sign = iconopen if self.is_open() else iconclose
             sign += ' '

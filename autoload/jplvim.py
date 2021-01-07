@@ -19,6 +19,8 @@ _joplin_port = int(vim.vars.get('joplin_port', b'41184').decode())
 _joplin_window_width = int(vim.vars.get('joplin_window_width', b'30').decode())
 _joplin_icon_open = vim.vars.get('joplin_icon_open', b'-').decode()
 _joplin_icon_close = vim.vars.get('joplin_icon_close', b'+').decode()
+_joplin_icon_todo = vim.vars.get('joplin_icon_todo', b'[ ]').decode()
+_joplin_icon_completed = vim.vars.get('joplin_icon_completed', b'[x]').decode()
 
 _help_lines = [
     '# Joplin quickhelp',
@@ -186,8 +188,10 @@ def render():
         _treenodes = tree.construct_folder_tree(get_joplin())
     lines = note_text(_treenodes, 0)
     helptext = _help_lines if has_help() else []
-    cur = list(
-        [line.text(_joplin_icon_open, _joplin_icon_close) for line in lines])
+    cur = list([
+        line.text(_joplin_icon_open, _joplin_icon_close, _joplin_icon_todo,
+                  _joplin_icon_completed) for line in lines
+    ])
     vim.current.buffer.options['modifiable'] = True
     vim.current.buffer[:] = helptext + cur
     vim.current.buffer.options['modifiable'] = False
