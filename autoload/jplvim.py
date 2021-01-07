@@ -23,6 +23,17 @@ _joplin_icon_close = vim.vars.get('joplin_icon_close', b'+').decode()
 _joplin_icon_todo = vim.vars.get('joplin_icon_todo', b'[ ]').decode()
 _joplin_icon_completed = vim.vars.get('joplin_icon_completed', b'[x]').decode()
 _joplin_icon_note = vim.vars.get('joplin_icon_note', b'').decode()
+_joplin_pin_todo = int(vim.vars.get('joplin_pin_todo', b'1').decode())
+_joplin_hide_complete = int(
+    vim.vars.get('_joplin_hide_complete', b'0').decode())
+_joplin_order_by_notebook = vim.vars.get('joplin_order_by_notebook',
+                                         b'title').decode()
+_joplin_order_desc_notebook = int(
+    vim.vars.get('joplin_order_desc_notebook', b'0').decode())
+_joplin_order_by_note = vim.vars.get('joplin_order_by_note',
+                                     b'updated_time').decode()
+_joplin_order_desc_note = int(
+    vim.vars.get('joplin_order_desc_note', b'0').decode())
 
 _window_title = [
     int((_joplin_window_width - 11) / 2) * '=' + ' Joplin ' + int(
