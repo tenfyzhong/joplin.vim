@@ -22,8 +22,10 @@ class TreeNode(object):
     def __repr__(self):
         return str(self.node)
 
-    def open(self):
+    def open(self, joplin):
         self._open = True
+        if not self.fetched or self.dirty:
+            self.fetch(joplin)
 
     def close(self):
         self._open = False

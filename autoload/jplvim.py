@@ -230,13 +230,10 @@ def cmd_o():
     print('_saved_winnr', _saved_winnr)
     line = get_cur_line()
     if line.treenode.is_folder():
-        if not line.treenode.fetched or line.treenode.dirty:
-            line.treenode.fetch(j)
-
         if line.treenode.is_open():
             line.treenode.close()
         else:
-            line.treenode.open()
+            line.treenode.open(j)
         saved_pos = vim.eval('getcurpos()')
         render()
         vim.Function('setpos')('.', saved_pos)
