@@ -147,8 +147,7 @@ def close_window():
 
 
 def write():
-    joplin_note_id = vim.current.buffer.vars.get('joplin_note_id',
-                                                 b'').decode()
+    joplin_note_id = get_editting_note_id()
     if joplin_note_id == '':
         return
 
@@ -316,13 +315,23 @@ def find_treenode(nodes, lineno):
                          lineno) if nodes[mid].is_folder() else None
 
 
+def get_editting_note_id():
+    joplin_note_id = vim.current.buffer.vars.get('joplin_note_id',
+                                                 b'').decode()
+    return joplin_note_id
+
+
+def set_editting_note_id(id):
+    vim.current.buffer.vars['joplin_note_id'] = id
+
+
 def edit(command, treenode):
     lazyredraw_saved = vim.options['lazyredraw']
     dirname = vim.eval('tempname()')
     os.mkdir(dirname)
     filename = dirname + '/' + treenode.node.title + '.md'
     vim.command('silent %s %s' % (command, filename))
-    vim.current.buffer.vars['joplin_note_id'] = treenode.node.id
+    set_editting_note_id(treenode.node.id)
     treenode.fetch(get_joplin())
     vim.current.buffer[:] = treenode.node.body.split('\n')
     vim.command('silent noautocmd w')
