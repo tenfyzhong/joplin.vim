@@ -137,7 +137,7 @@ class TreeNode(object):
             return ''
 
 
-def construct_folder_tree(joplin, order_by, order_desc):
+def construct_folder_tree(joplin, order_by, order_desc=False):
     """construct folder tree
 
     :returns: TreeNodes

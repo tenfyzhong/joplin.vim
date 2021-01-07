@@ -14,5 +14,6 @@ command Joplin call joplin#toggle()
 
 augroup joplin_init
   autocmd!
-  autocmd BufEnter tree.joplin let b:saved_winnr = winnr('#')
+  autocmd BufEnter tree.joplin let b:saved_prev_winnr = winnr('#')
+  autocmd BufLeave tree.joplin let b:saved_last_line = line('.')
 augroup end

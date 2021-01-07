@@ -138,13 +138,16 @@ def open_window():
     winnr = vim.eval('bufwinnr("%s")' % bufname_)
     winnr = int(winnr)
     if winnr != -1:
-        vim.command('win_gotoid("%s")' % winnr)
+        vim.command('%dwincmd w' % winnr)
         return
     vim.command('silent keepalt topleft vertical %d split %s' %
                 (_joplin_window_width, bufname_))
     set_options()
     set_map()
     render()
+    last_line = vim.current.buffer.vars.get('saved_last_line',
+                                            len(_window_title)+1)
+    vim.Function('cursor')(last_line, 1)
 
 
 def close_window():
@@ -351,9 +354,9 @@ def edit(command, treenode):
 
 
 def go_to_previous_win():
-    saved_winnr = vim.current.buffer.vars.get('saved_winnr', -1)
-    if saved_winnr > 0:
-        vim.command('%dwincmd w' % saved_winnr)
+    saved_prev_winnr = vim.current.buffer.vars.get('saved_prev_winnr', -1)
+    if saved_prev_winnr > 0:
+        vim.command('%dwincmd w' % saved_prev_winnr)
     else:
         vim.command('wincmd w')
 
