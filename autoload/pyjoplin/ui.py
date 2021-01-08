@@ -7,6 +7,7 @@ import os
 import sys
 import re
 from .node import NoteNode
+from datetime import datetime
 
 _treenodes = None
 _show_help = False
@@ -189,6 +190,36 @@ def write():
     get_joplin().put(note)
 
 
+def show_info():
+    joplin_note_id = get_editting_note_id()
+    if joplin_note_id == '':
+        return
+    note = get_joplin().get(NoteNode, joplin_note_id, ['body'])
+    infos = []
+    infos.append('Information for %s' % note.title)
+    infos.append(vim.options['columns'] * '=')
+    infos.append('id         : %s' % joplin_note_id)
+    infos.append('update time: %s' % datetime.fromtimestamp(
+        note.updated_time / 1000.0).strftime('%Y-%m-%d %H:%M:%S'))
+    infos.append('create time: %s' % datetime.fromtimestamp(
+        note.created_time / 1000.0).strftime('%Y-%m-%d %H:%M:%S'))
+    tags = list(
+        [tag.title for tag in get_joplin().get_note_tags(joplin_note_id)])
+    infos.append('tags       : %s' % str(tags))
+    cmdheight_saved = vim.options['cmdheight']
+    lazyredraw_saved = vim.options['lazyredraw']
+    vim.options['cmdheight'] = len(infos) + 1
+    vim.options['lazyredraw'] = False
+    vim.command('redraw!')
+    for info in infos:
+        vim.command('echo "%s"' % info)
+    vim.command('echo ""')
+    vim.command('call getchar()')
+    vim.command('redraw!')
+    vim.options['cmdheight'] = cmdheight_saved
+    vim.options['lazyredraw'] = lazyredraw_saved
+
+
 def set_options():
     vim.current.buffer.options['bufhidden'] = 'hide'
     vim.current.buffer.options['buftype'] = 'nofile'
@@ -355,10 +386,13 @@ def edit(command, treenode):
     vim.command('silent %s %s' % (command, filename))
     set_editting_note_id(treenode.node.id)
     treenode.fetch_note(get_joplin())
+    vim.options['lazyredraw'] = True
     vim.current.buffer[:] = treenode.node.body.split('\n')
     vim.command('silent noautocmd w')
+    vim.command('redraw!')
     vim.options['lazyredraw'] = lazyredraw_saved
     vim.command('autocmd BufWritePost <buffer> python3 pyjoplin.write()')
+    vim.command('command! -buffer JoplinNoteInfo python3 pyjoplin.show_info()')
 
 
 def go_to_previous_win():

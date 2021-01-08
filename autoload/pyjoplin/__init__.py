@@ -3,7 +3,8 @@
 
 from .ui import cmd_o, cmd_t, cmd_i, cmd_s, cmd_O, cmd_x, cmd_X, cmd_r, \
     cmd_R, cmd_P, cmd_p, cmd_K, cmd_J, cmd_ctrl_j, cmd_ctrl_k, cmd_m, cmd_q, \
-    cmd_question_mark, write, open_window, close_window, toggle_window
+    cmd_question_mark, write, open_window, close_window, toggle_window, \
+    show_info
 
 __all__ = [
     'cmd_o',
@@ -29,4 +30,5 @@ __all__ = [
     'cmd_r',
     'cmd_R',
     'cmd_m',
+    'show_info',
 ]

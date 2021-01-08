@@ -85,7 +85,7 @@ class Joplin(object):
                                  order_by=order_by,
                                  order_dir=order_dir)
 
-    def get(self, cls, id):
+    def get(self, cls, id, except_fields=[]):
         """Get cls' object
 
         :cls: the object type
@@ -93,9 +93,11 @@ class Joplin(object):
         :returns: object if success else None
 
         """
-        fields = ','.join(cls().fields())
+        fields = cls().fields()
+        fields = list(filter(lambda field: field not in except_fields, fields))
+        fields_str = ','.join(fields)
         url = '%s/%s/%s?token=%s&fields=%s' % (self.base_url, cls.path(), id,
-                                               self.token, fields)
+                                               self.token, fields_str)
         r = requests.get(url)
         if r.status_code != 200:
             print('Joplin:', url, r.status_code, r.text)
@@ -143,7 +145,7 @@ class Joplin(object):
         if r.status_code != 200:
             print('Joplin:', url, r.status_code, r.text)
 
-    def get_note_tags(self, id, order_by='updated_time', order_dir='DESC'):
+    def get_note_tags(self, id):
         """Gets all the tags attached to this note
 
         :id: note's id
@@ -151,10 +153,7 @@ class Joplin(object):
 
         """
         path = '/notes/%s/tags' % id
-        return self._get_by_path(TagNode,
-                                 path,
-                                 order_by=order_by,
-                                 order_dir=order_dir)
+        return self._get_by_path(TagNode, path)
 
     def get_note_resources(self,
                            id,
