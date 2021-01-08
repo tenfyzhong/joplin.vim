@@ -6,7 +6,7 @@ from . import joplin, tree
 import os
 import sys
 import re
-from .node import NoteNode, TagNode
+from .node import NoteNode, TagNode, ResourceNode
 from datetime import datetime
 
 _treenodes = None
@@ -519,6 +519,9 @@ def edit(command, treenode):
                 'pyjoplin.run("convert_type")')
     vim.command('command! -buffer -nargs=0 JoplinTodoComplete python3 '
                 'pyjoplin.run("todo_complete")')
+    vim.command(
+        'command! -buffer -nargs=1 -complete=file JoplinAttach python3 '
+        'pyjoplin.run("attach", file=<q-args>)')
 
 
 def go_to_previous_win():
@@ -557,6 +560,21 @@ def refresh(treenode):
                           _joplin_note_order_desc)
     for child in treenode.children:
         refresh(child)
+
+
+def attach(**kwargs):
+    if 'file' not in kwargs:
+        return
+    filepath = kwargs['file']
+    title = os.path.basename(filepath)
+    resource = ResourceNode(title=title)
+    resource = get_joplin().post_resource(filepath, resource)
+    if resource.id == '':
+        print('Joplin: attach resource failed')
+        return
+    prefix = '!' if resource.mime.startswith(r'image/') else ''
+    text = '%s[%s](:/%s)' % (prefix, title, resource.id)
+    vim.command('normal! a' + text)
 
 
 def cmd_o():
