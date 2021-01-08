@@ -123,7 +123,7 @@ def set_map():
         vim.command(cmd)
     for lhs, rhs in _mapping_dict.items():
         cmd = 'nnoremap <script><silent><buffer>%s <esc>:<c-u>python3 ' \
-                'pyjoplin.%s()<cr>' % (lhs, rhs)
+                'pyjoplin.run("%s")<cr>' % (lhs, rhs)
         vim.command(cmd)
 
 
@@ -142,6 +142,10 @@ def get_joplin():
             print('Joplin: can not create joplin instance')
             sys.exit(-1)
     return _j
+
+
+def run(funcname, **kwargs):
+    eval('%s(**kwargs)' % funcname)
 
 
 def open_window():
@@ -226,12 +230,18 @@ def tag_titles():
     return titles
 
 
-def tag2bvar(var):
+def tag2bvar(**kwargs):
+    if 'var' not in kwargs:
+        return
+    var = kwargs['var']
     titles = tag_titles()
     vim.current.buffer.vars[var] = titles
 
 
-def tag_add(title):
+def tag_add(**kwargs):
+    if 'title' not in kwargs:
+        return
+    title = kwargs['title']
     joplin_note_id = get_editting_note_id()
     if joplin_note_id == '':
         print('Joplin: not a note')
@@ -434,15 +444,15 @@ def edit(command, treenode):
     vim.command('silent noautocmd w')
     vim.command('redraw!')
     vim.options['lazyredraw'] = lazyredraw_saved
-    vim.command('autocmd BufWritePost <buffer> python3 pyjoplin.write()')
+    vim.command('autocmd BufWritePost <buffer> python3 pyjoplin.run("write")')
     vim.command(
-        'command! -buffer -nargs=0 JoplinNoteInfo python3 pyjoplin.show_info()'
+        'command! -buffer -nargs=0 JoplinNoteInfo python3 pyjoplin.run("show_info")'
     )
     vim.command(
-        'command! -buffer -nargs=1 -complete=customlist,JoplinTagComplete JoplinTagAdd python3 pyjoplin.tag_add(<q-args>)'
+        'command! -buffer -nargs=1 -complete=customlist,JoplinTagComplete JoplinTagAdd python3 pyjoplin.run("tag_add", title=<q-args>)'
     )
     vim.command(
-        'command! -buffer -nargs=0 JoplinConvertType python3 pyjoplin.convert_type()'
+        'command! -buffer -nargs=0 JoplinConvertType python3 pyjoplin.run("convert_type")'
     )
 
 

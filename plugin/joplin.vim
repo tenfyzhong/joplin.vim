@@ -14,7 +14,7 @@ if !exists('g:joplin_token')
 endif
 
 function! JoplinTagComplete(A, L, P)
-  python3 pyjoplin.tag2bvar('tag_titles')
+  python3 pyjoplin.run('tag2bvar', var='tag_titles')
   let tag_titles = get(b:, 'tag_titles', [])
   call filter(tag_titles, printf('v:val =~ "^".a:A'))
   return tag_titles

@@ -10,14 +10,14 @@ import pyjoplin
 EOF
 
 function! joplin#open()
-  python3 pyjoplin.open_window()
+  python3 pyjoplin.run('open_window')
 endfunction
 
 function! joplin#close()
-  python3 pyjoplin.close_window()
+  python3 pyjoplin.run('close_window')
 endfunction
 
 function! joplin#toggle()
-  python3 pyjoplin.toggle_window()
+  python3 pyjoplin.run('toggle_window')
 endfunction
 
