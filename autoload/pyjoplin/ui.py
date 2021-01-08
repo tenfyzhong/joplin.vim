@@ -293,9 +293,24 @@ def convert_type():
         print('Joplin: not a note')
         return
     note = get_joplin().get(NoteNode, joplin_note_id)
-    note.is_todo = 0 if note.is_todo else 1
+    note.is_todo ^= 1
     note.todo_completed = 0
     get_joplin().put(note)
+    # TODO redraw tree
+
+
+def todo_complete(**kwargs):
+    joplin_note_id = get_editting_note_id()
+    if joplin_note_id == '':
+        print('Joplin: not a note')
+        return
+    note = get_joplin().get(NoteNode, joplin_note_id)
+    if not note.is_todo:
+        print('Jopli: not a todo')
+        return
+    note.todo_completed ^= 1
+    get_joplin().put(note)
+    # TODO redraw tree
 
 
 def set_options():
@@ -481,6 +496,9 @@ def edit(command, treenode):
     )
     vim.command(
         'command! -buffer -nargs=0 JoplinConvertType python3 pyjoplin.run("convert_type")'
+    )
+    vim.command(
+        'command! -buffer -nargs=0 JoplinTodoComplete python3 pyjoplin.run("todo_complete")'
     )
 
 
