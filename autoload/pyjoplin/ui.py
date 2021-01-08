@@ -6,7 +6,7 @@ from . import joplin, tree
 import os
 import sys
 import re
-from .node import NoteNode
+from .node import NoteNode, TagNode
 from datetime import datetime
 
 _treenodes = None
@@ -220,6 +220,38 @@ def show_info():
     vim.options['lazyredraw'] = lazyredraw_saved
 
 
+def tag_titles():
+    tags = get_joplin().get_all(TagNode)
+    titles = list([tag.title for tag in tags])
+    return titles
+
+
+def tag2bvar(var):
+    titles = tag_titles()
+    vim.current.buffer.vars[var] = titles
+
+
+def tag_add(title):
+    joplin_note_id = get_editting_note_id()
+    if joplin_note_id == '':
+        print('Joplin: not a note')
+        return
+    # the note has the tag
+    had_titles = list(
+        [tag.title for tag in get_joplin().get_note_tags(joplin_note_id)])
+    if title in had_titles:
+        return
+    tags = get_joplin().get_all(TagNode)
+    # tag exists
+    tags = list(filter(lambda tag: tag.title == title, tags))
+    if len(tags) > 0:
+        find = tags[0]
+    else:
+        find = get_joplin().post(TagNode(title=title))
+    if find is not None:
+        get_joplin().post_tag_note(find.id, joplin_note_id)
+
+
 def set_options():
     vim.current.buffer.options['bufhidden'] = 'hide'
     vim.current.buffer.options['buftype'] = 'nofile'
@@ -393,6 +425,9 @@ def edit(command, treenode):
     vim.options['lazyredraw'] = lazyredraw_saved
     vim.command('autocmd BufWritePost <buffer> python3 pyjoplin.write()')
     vim.command('command! -buffer JoplinNoteInfo python3 pyjoplin.show_info()')
+    vim.command(
+        'command! -buffer -nargs=1 -complete=customlist,JoplinTagComplete JoplinTagAdd python3 pyjoplin.tag_add(<q-args>)'
+    )
 
 
 def go_to_previous_win():

@@ -20,3 +20,4 @@ endfunction
 function! joplin#toggle()
   python3 pyjoplin.toggle_window()
 endfunction
+

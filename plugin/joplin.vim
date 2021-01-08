@@ -13,6 +13,13 @@ if !exists('g:joplin_token')
   finish
 endif
 
+function! JoplinTagComplete(A, L, P)
+  python3 pyjoplin.tag2bvar('tag_titles')
+  let tag_titles = get(b:, 'tag_titles', [])
+  call filter(tag_titles, printf('v:val =~ "^".a:A'))
+  return tag_titles
+endfunction
+
 command! JoplinOpen silent call joplin#open()
 command! JoplinClose silent call joplin#close()
 command! Joplin silent call joplin#toggle()
