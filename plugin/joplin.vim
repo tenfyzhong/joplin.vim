@@ -33,6 +33,9 @@ function! JoplinAllResourceComplete(A, L, P)
   return <SID>CompleteFunc('all_resource_titles', 'all_resource_titles', a:A)
 endfunction
 
+function! JoplinNoteComplete(A, L, P)
+endfunction
+
 command! JoplinOpen silent call joplin#open()
 command! JoplinClose silent call joplin#close()
 command! Joplin silent call joplin#toggle()

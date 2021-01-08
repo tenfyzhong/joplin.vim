@@ -243,6 +243,10 @@ def all_resource_titles():
     return titles
 
 
+def note_match_titles(arg_lead):
+    pass
+
+
 def works2bvar(**kwargs):
     if 'var' not in kwargs or 'wordsfunc' not in kwargs:
         return
@@ -532,6 +536,9 @@ def edit(command, treenode):
         'command! -buffer -nargs=1 '
         '-complete=customlist,JoplinAllResourceComplete JoplinLinkResource '
         'python3 pyjoplin.run("link_resource", title=<q-args>)')
+    vim.command('command! -buffer -nargs=1 '
+                '-complete=customlist,JoplinNoteComplete JoplinLinkNote '
+                'python3 pyjoplin.run("link_note", title=<q-args>)')
 
 
 def go_to_previous_win():
