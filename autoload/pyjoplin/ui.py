@@ -237,6 +237,12 @@ def all_tag_titles():
     return titles
 
 
+def all_resource_titles():
+    resources = get_joplin().get_all(ResourceNode)
+    titles = list([resource.title for resource in resources])
+    return titles
+
+
 def works2bvar(**kwargs):
     if 'var' not in kwargs or 'wordsfunc' not in kwargs:
         return
@@ -522,6 +528,10 @@ def edit(command, treenode):
     vim.command(
         'command! -buffer -nargs=1 -complete=file JoplinAttach python3 '
         'pyjoplin.run("attach", file=<q-args>)')
+    vim.command(
+        'command! -buffer -nargs=1 '
+        '-complete=customlist,JoplinAllResourceComplete JoplinLinkResource '
+        'python3 pyjoplin.run("link_resource", title=<q-args>)')
 
 
 def go_to_previous_win():
@@ -562,6 +572,12 @@ def refresh(treenode):
         refresh(child)
 
 
+def insert_resource(resource):
+    prefix = '!' if resource.mime.startswith(r'image/') else ''
+    text = '%s[%s](:/%s)' % (prefix, resource.title, resource.id)
+    vim.command('normal! a' + text)
+
+
 def attach(**kwargs):
     if 'file' not in kwargs:
         return
@@ -572,13 +588,17 @@ def attach(**kwargs):
     if resource.id == '':
         print('Joplin: attach resource failed')
         return
-    prefix = '!' if resource.mime.startswith(r'image/') else ''
-    text = '%s[%s](:/%s)' % (prefix, title, resource.id)
-    vim.command('normal! a' + text)
+    insert_resource(resource)
 
 
 def link_resource(**kwargs):
-    pass
+    if 'title' not in kwargs:
+        return
+    title = kwargs['title']
+    resources = get_joplin().get_all(ResourceNode)
+    matched = list(filter(lambda resource: resource.title == title, resources))
+    if len(matched) > 0:
+        insert_resource(matched[0])
 
 
 def link_note(**kwargs):

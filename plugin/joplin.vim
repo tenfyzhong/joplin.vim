@@ -13,18 +13,24 @@ if !exists('g:joplin_token')
   finish
 endif
 
+function! s:CompleteFunc(wordsfunc, var, A)
+  exec printf("python3 pyjoplin.run('works2bvar', wordsfunc='%s', var='%s')", a:wordsfunc, a:var)
+  let words = get(b:, a:var, [])
+  call filter(words, printf('v:val =~ "^".a:A'))
+  call filter(words, 'count(words, v:val) == 1')
+  return words
+endfunction
+
 function! JoplinAllTagComplete(A, L, P)
-  python3 pyjoplin.run('works2bvar', wordsfunc='all_tag_titles', var='tag_titles')
-  let tag_titles = get(b:, 'tag_titles', [])
-  call filter(tag_titles, printf('v:val =~ "^".a:A'))
-  return tag_titles
+  return <SID>CompleteFunc('all_tag_titles', 'all_tag_titles', a:A)
 endfunction
 
 function! JoplinNoteTagComplete(A, L, P)
-  python3 pyjoplin.run('works2bvar', wordsfunc='note_tag_titles', var='tag_titles')
-  let tag_titles = get(b:, 'tag_titles', [])
-  call filter(tag_titles, printf('v:val =~ "^".a:A'))
-  return tag_titles
+  return <SID>CompleteFunc('note_tag_titles', 'note_tag_titles', a:A)
+endfunction
+
+function! JoplinAllResourceComplete(A, L, P)
+  return <SID>CompleteFunc('all_resource_titles', 'all_resource_titles', a:A)
 endfunction
 
 command! JoplinOpen silent call joplin#open()
