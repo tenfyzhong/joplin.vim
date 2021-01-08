@@ -55,6 +55,8 @@ _help_lines = [
     '# O: recursively open node',
     '# x: close parent of node',
     '# X: close all child nodes of current node recursively',
+    '# r: refresh cursor folder',
+    '# R: refresh cursor root',
     '# ',
     '# ' + (_joplin_window_width - 2) * '-',
     '# Tree navigation mappings~',
@@ -67,6 +69,7 @@ _help_lines = [
     '# ',
     '# ' + (_joplin_window_width - 2) * '-',
     '# Other mappings~',
+    '# m: show menu',
     '# q: Close the Joplin window',
     '# ?: toggle help',
     '',
@@ -97,19 +100,20 @@ _mapping_dict = {
     'O': 'cmd_O',
     'x': 'cmd_x',
     'X': 'cmd_X',
+    'r': 'cmd_r',
+    'R': 'cmd_R',
     'P': 'cmd_P',
     'p': 'cmd_p',
     'K': 'cmd_K',
     'J': 'cmd_J',
     '<C-j>': 'cmd_ctrl_j',
     '<C-k>': 'cmd_ctrl_k',
+    'm': 'cmd_m',
     'q': 'cmd_q',
     '?': 'cmd_question_mark',
 }
 
-_unmap = [
-    'r', 'R', '<C-r>', 'u', 'U', 'I', 'a', 'A', 's', 'S', 'd', 'D', 'c', 'C'
-]
+_unmap = ['<C-r>', 'u', 'U', 'I', 'a', 'A', 's', 'S', 'd', 'D', 'c', 'C']
 
 
 def set_map():
@@ -370,6 +374,24 @@ def cursor(treenode):
         vim.Function('cursor')(treenode.lineno, 1)
 
 
+def refresh(treenode):
+    if not treenode.is_folder():
+        return
+    if not treenode.is_open():
+        # if the current node is close
+        # not need to refresh current node
+        # buf if it has fetch data, sould set to dirty
+        # it will fetch data when open
+        treenode.dirty = treenode.fetched
+        return
+    treenode.fetch_folder(get_joplin(), _joplin_pin_todo,
+                          _joplin_hide_completed, _joplin_folder_order_by,
+                          _joplin_folder_order_desc, _joplin_note_order_by,
+                          _joplin_note_order_desc)
+    for child in treenode.children:
+        refresh(child)
+
+
 def cmd_o():
     treenode = get_cur_line()
     if treenode is None:
@@ -471,6 +493,28 @@ def cmd_X():
     cursor(treenode)
 
 
+def cmd_r():
+    treenode = get_cur_line()
+    lastnode = treenode
+    if not treenode.is_folder():
+        treenode = treenode.parent
+    refresh(treenode)
+    render()
+    cursor(lastnode)
+    print('Joplin: Refreshed!')
+
+
+def cmd_R():
+    treenode = get_cur_line()
+    lastnode = treenode
+    while treenode.parent is not None:
+        treenode = treenode.parent
+    refresh(treenode)
+    render()
+    cursor(lastnode)
+    print('Joplin: Refreshed!')
+
+
 def cmd_P():
     treenode = get_cur_line()
     if treenode is None:
@@ -532,6 +576,11 @@ def cmd_ctrl_k():
     i = treenode.child_index_of_parent - 1
     if i >= 0:
         cursor(nodes[i])
+
+
+def cmd_m():
+    # TODO
+    pass
 
 
 def cmd_q():
