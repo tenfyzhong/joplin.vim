@@ -29,15 +29,14 @@ class TreeNode(object):
     def text(self, iconopen, iconclose, iconnote, icontodo, iconcompleted):
         sign = ''
         if not self.is_folder():
-            sign = '  '
+            sign = ' '
             if self.node.is_todo:
                 sign += iconcompleted if self.node.todo_completed else icontodo
             else:
                 sign += iconnote
         else:
             sign = iconopen if self.is_open() else iconclose
-            sign += ' '
-        line = self.indent * '  ' + sign + self.node.title
+        line = self.indent * ' ' + sign + self.node.title
         return line
 
     def open(self, joplin, pin_todo, hide_completed, folder_order_by,
