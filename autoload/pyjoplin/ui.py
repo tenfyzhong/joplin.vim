@@ -10,8 +10,6 @@ from .node import NoteNode, TagNode
 from datetime import datetime
 
 _treenodes = None
-_show_help = False
-_saved_pos = None
 _j = None
 
 _joplin_token = vim.vars.get('joplin_token', b'').decode()
@@ -287,6 +285,25 @@ def tag_del(**kwargs):
         get_joplin().delete_tag_note(tags[0].id, joplin_note_id)
 
 
+def refresh_treenode_line(line):
+    print('line', line)
+    winnr = vim.Function('bufwinnr')(bufname())
+    if winnr <= 0:
+        print('can not find tree')
+        return
+    winnr_saved = vim.Function('winnr')()
+    lazyredraw_saved = vim.options['lazyredraw']
+    vim.options['lazyredraw'] = True
+    vim.command('%dwincmd w' % winnr)
+    treenode = find_treenode(_treenodes, line)
+    if treenode is not None and not treenode.is_folder():
+        treenode = treenode.parent
+    refresh_render(treenode)
+    vim.command('%dwincmd w' % winnr_saved)
+    vim.command('redraw!')
+    vim.options['lazyredraw'] = lazyredraw_saved
+
+
 def convert_type():
     joplin_note_id = get_editting_note_id()
     if joplin_note_id == '':
@@ -296,7 +313,9 @@ def convert_type():
     note.is_todo ^= 1
     note.todo_completed = 0
     get_joplin().put(note)
-    # TODO redraw tree
+    line = vim.current.buffer.vars.get('joplin_treenode_line', -1)
+    if line != -1:
+        refresh_treenode_line(line)
 
 
 def todo_complete(**kwargs):
@@ -310,7 +329,9 @@ def todo_complete(**kwargs):
         return
     note.todo_completed ^= 1
     get_joplin().put(note)
-    # TODO redraw tree
+    line = vim.current.buffer.vars.get('joplin_treenode_line', -1)
+    if line != -1:
+        refresh_treenode_line(line)
 
 
 def set_options():
@@ -467,8 +488,9 @@ def get_editting_note_id():
     return joplin_note_id
 
 
-def set_editting_note_id(id):
+def set_editting_note_info(id, line):
     vim.current.buffer.vars['joplin_note_id'] = id
+    vim.current.buffer.vars['joplin_treenode_line'] = line
 
 
 def edit(command, treenode):
@@ -477,7 +499,7 @@ def edit(command, treenode):
     os.mkdir(dirname)
     filename = dirname + '/' + treenode.node.title + '.md'
     vim.command('silent %s %s' % (command, filename))
-    set_editting_note_id(treenode.node.id)
+    set_editting_note_info(treenode.node.id, treenode.lineno)
     treenode.fetch_note(get_joplin())
     vim.options['lazyredraw'] = True
     vim.current.buffer[:] = treenode.node.body.split('\n')
@@ -515,7 +537,14 @@ def cursor(treenode):
         vim.Function('cursor')(treenode.lineno, 1)
 
 
+def refresh_render(treenode):
+    refresh(treenode)
+    render()
+
+
 def refresh(treenode):
+    if treenode is None:
+        return
     if not treenode.is_folder():
         return
     if not treenode.is_open():
@@ -639,8 +668,7 @@ def cmd_r():
     lastnode = treenode
     if not treenode.is_folder():
         treenode = treenode.parent
-    refresh(treenode)
-    render()
+    refresh_render(treenode)
     cursor(lastnode)
     print('Joplin: Refreshed!')
 
@@ -650,8 +678,7 @@ def cmd_R():
     lastnode = treenode
     while treenode.parent is not None:
         treenode = treenode.parent
-    refresh(treenode)
-    render()
+    refresh_render(treenode)
     cursor(lastnode)
     print('Joplin: Refreshed!')
 
