@@ -1,5 +1,5 @@
-if v:version < 800
-  echom 'Joplin needs vim 8.0+'
+if v:version < 802
+  echom 'Joplin needs vim 8.2+'
   finish
 endif
 
