@@ -4,7 +4,7 @@ import requests
 import json
 # import os
 
-from node import factory_node, NoteNode, ResourceNode, TagNode
+from .node import factory_node, NoteNode, ResourceNode, TagNode
 
 
 class Joplin(object):

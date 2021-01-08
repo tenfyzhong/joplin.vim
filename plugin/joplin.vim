@@ -3,14 +3,19 @@ if v:version < 800
   finish
 endif
 
-if !has('pythonx')
-  echom 'Joplin needs vim support pythonx, see :help pythonx'
+if !has('python3')
+  echom 'Joplin needs vim support python3, see :help python3'
   finish
 endif
 
-command JoplinOpen call joplin#open()
-command JoplinClose call joplin#close()
-command Joplin call joplin#toggle()
+if !exists('g:joplin_token')
+  echohl WarningMsg | echom "joplin.vim: Please set g:joplin_token first." | echohl None
+  finish
+endif
+
+command! JoplinOpen silent call joplin#open()
+command! JoplinClose silent call joplin#close()
+command! Joplin silent call joplin#toggle()
 
 augroup joplin_init
   autocmd!

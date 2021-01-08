@@ -3,7 +3,7 @@
 # import os
 
 # from joplin import Joplin
-from node import FolderNode, NoteNode
+from .node import FolderNode, NoteNode
 from operator import attrgetter
 
 

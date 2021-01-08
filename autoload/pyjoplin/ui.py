@@ -2,12 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import vim
-import joplin
-import tree
+from . import joplin, tree
 import os
 import sys
 import re
-from node import NoteNode
+from .node import NoteNode
 
 _treenodes = None
 _show_help = False
@@ -93,7 +92,6 @@ _mapping_dict = {
     '<cr>': 'cmd_o',
     '<2-LeftMouse>': 'cmd_o',
     't': 'cmd_t',
-    'T': 'cmd_T',
     'i': 'cmd_i',
     's': 'cmd_s',
     'O': 'cmd_O',
@@ -112,6 +110,16 @@ _mapping_dict = {
 _unmap = [
     'r', 'R', '<C-r>', 'u', 'U', 'I', 'a', 'A', 's', 'S', 'd', 'D', 'c', 'C'
 ]
+
+
+def set_map():
+    for lhs in _unmap:
+        cmd = 'nnoremap <script><silent><buffer>%s <nop>' % lhs
+        vim.command(cmd)
+    for lhs, rhs in _mapping_dict.items():
+        cmd = 'nnoremap <script><silent><buffer>%s <esc>:<c-u>python3 ' \
+                'pyjoplin.%s()<cr>' % (lhs, rhs)
+        vim.command(cmd)
 
 
 def get_joplin():
@@ -146,7 +154,7 @@ def open_window():
     set_map()
     render()
     last_line = vim.current.buffer.vars.get('saved_last_line',
-                                            len(_window_title)+1)
+                                            len(_window_title) + 1)
     vim.Function('cursor')(last_line, 1)
 
 
@@ -155,6 +163,13 @@ def close_window():
     winnr = vim.Function('bufwinnr')(bufname_)
     if winnr > 0:
         vim.command('%dclose' % winnr)
+
+
+def toggle_window():
+    if vim.Function('bufwinnr')(bufname()) > 0:
+        close_window()
+    else:
+        open_window()
 
 
 def write():
@@ -190,16 +205,6 @@ def set_options():
     vim.current.window.options['number'] = True
     vim.current.window.options['relativenumber'] = False
     vim.current.window.options['cursorline'] = True
-
-
-def set_map():
-    for lhs in _unmap:
-        cmd = 'nnoremap <script><silent><buffer>%s <nop>' % lhs
-        vim.command(cmd)
-    for lhs, rhs in _mapping_dict.items():
-        cmd = 'nnoremap <script><silent><buffer>%s <esc>:<c-u>pythonx jplvim.%s()<cr>' % (
-            lhs, rhs)
-        vim.command(cmd)
 
 
 def bufname():
@@ -256,10 +261,9 @@ def render_title(nr):
 def render_nodes(nr):
     global _treenodes
     if _treenodes is None:
-        _treenodes = tree.construct_folder_tree(
-            get_joplin(),
-            _joplin_folder_order_by,
-            _joplin_folder_order_desc)
+        _treenodes = tree.construct_folder_tree(get_joplin(),
+                                                _joplin_folder_order_by,
+                                                _joplin_folder_order_desc)
     lines = note_text(_treenodes, 0)
     for line in lines:
         vim.current.buffer.append(
@@ -350,7 +354,7 @@ def edit(command, treenode):
     vim.current.buffer[:] = treenode.node.body.split('\n')
     vim.command('silent noautocmd w')
     vim.options['lazyredraw'] = lazyredraw_saved
-    vim.command('autocmd BufWritePost <buffer> pythonx jplvim.write()')
+    vim.command('autocmd BufWritePost <buffer> python3 pyjoplin.write()')
 
 
 def go_to_previous_win():
@@ -374,14 +378,10 @@ def cmd_o():
         if treenode.is_open():
             treenode.close()
         else:
-            treenode.open(
-                get_joplin(),
-                _joplin_pin_todo,
-                _joplin_hide_completed,
-                _joplin_folder_order_by,
-                _joplin_folder_order_desc,
-                _joplin_note_order_by,
-                _joplin_note_order_desc)
+            treenode.open(get_joplin(), _joplin_pin_todo,
+                          _joplin_hide_completed, _joplin_folder_order_by,
+                          _joplin_folder_order_desc, _joplin_note_order_by,
+                          _joplin_note_order_desc)
         saved_pos = vim.eval('getcurpos()')
         render()
         vim.Function('setpos')('.', saved_pos)
@@ -419,14 +419,9 @@ def cmd_s():
 
 def open_recusively(treenode):
     if treenode.is_folder() and not treenode.is_open():
-        treenode.open(
-                get_joplin(),
-                _joplin_pin_todo,
-                _joplin_hide_completed,
-                _joplin_folder_order_by,
-                _joplin_folder_order_desc,
-                _joplin_note_order_by,
-                _joplin_note_order_desc)
+        treenode.open(get_joplin(), _joplin_pin_todo, _joplin_hide_completed,
+                      _joplin_folder_order_by, _joplin_folder_order_desc,
+                      _joplin_note_order_by, _joplin_note_order_desc)
 
     for child in treenode.children:
         open_recusively(child)
