@@ -252,6 +252,17 @@ def tag_add(title):
         get_joplin().post_tag_note(find.id, joplin_note_id)
 
 
+def convert_type():
+    joplin_note_id = get_editting_note_id()
+    if joplin_note_id == '':
+        print('Joplin: not a note')
+        return
+    note = get_joplin().get(NoteNode, joplin_note_id)
+    note.is_todo = 0 if note.is_todo else 1
+    note.todo_completed = 0
+    get_joplin().put(note)
+
+
 def set_options():
     vim.current.buffer.options['bufhidden'] = 'hide'
     vim.current.buffer.options['buftype'] = 'nofile'
@@ -424,9 +435,14 @@ def edit(command, treenode):
     vim.command('redraw!')
     vim.options['lazyredraw'] = lazyredraw_saved
     vim.command('autocmd BufWritePost <buffer> python3 pyjoplin.write()')
-    vim.command('command! -buffer JoplinNoteInfo python3 pyjoplin.show_info()')
+    vim.command(
+        'command! -buffer -nargs=0 JoplinNoteInfo python3 pyjoplin.show_info()'
+    )
     vim.command(
         'command! -buffer -nargs=1 -complete=customlist,JoplinTagComplete JoplinTagAdd python3 pyjoplin.tag_add(<q-args>)'
+    )
+    vim.command(
+        'command! -buffer -nargs=0 JoplinConvertType python3 pyjoplin.convert_type()'
     )
 
 
