@@ -40,27 +40,15 @@ class TreeNode(object):
         line = self.indent * '  ' + sign + self.node.title
         return line
 
-    def open(
-            self,
-            joplin,
-            pin_todo,
-            hide_completed,
-            folder_order_by,
-            folder_order_desc,
-            note_order_by,
-            note_order_desc):
+    def open(self, joplin, pin_todo, hide_completed, folder_order_by,
+             folder_order_desc, note_order_by, note_order_desc):
         if not self.is_folder():
             return
         self._open = True
         if not self.fetched or self.dirty:
-            self.fetch_folder(
-                joplin,
-                pin_todo,
-                hide_completed,
-                folder_order_by,
-                folder_order_desc,
-                note_order_by,
-                note_order_desc)
+            self.fetch_folder(joplin, pin_todo, hide_completed,
+                              folder_order_by, folder_order_desc,
+                              note_order_by, note_order_desc)
 
     def close(self):
         if not self.is_folder():
@@ -79,43 +67,43 @@ class TreeNode(object):
         note = joplin.get(NoteNode, self.node.id)
         self.node = note
 
-    def fetch_folder(
-            self,
-            joplin,
-            pin_todo,
-            hide_completed,
-            folder_order_by,
-            folder_order_desc,
-            note_order_by,
-            note_order_desc):
+    def fetch_folder(self, joplin, pin_todo, hide_completed, folder_order_by,
+                     folder_order_desc, note_order_by, note_order_desc):
         """Fetch all notes from joplin
         :joplin: joplin instance
         """
         if not self.is_folder():
             return
-            # remove notes
-        folders = list([node.node for node in self.children])
-        folders = sorted(
-            folders,
-            key=attrgetter(folder_order_by),
-            reverse=folder_order_desc)
-        tree_folders = list([TreeNode(folder) for folder in folders])
+        # remove notes
+        tree_folders = list(
+            filter(lambda node: node.is_folder(), self.children))
+        tree_folders = sorted(tree_folders,
+                              key=attrgetter('node.' + folder_order_by),
+                              reverse=folder_order_desc)
         todo_notes = joplin.get_folder_notes(self.node.id)
         if hide_completed:
-            todo_notes = list(filter(lambda node: not node.todo_completed,
-                                     todo_notes))
+            todo_notes = list(
+                filter(
+                    lambda node: not node.node.is_todo or not node.
+                    todo_completed, todo_notes))
         if pin_todo:
-            todos = list(filter(lambda node: node.is_todo and
-                                not node.todo_completed, todo_notes))
-            todos = sorted(todos, key=attrgetter(note_order_by),
+            todos = []
+            notes = []
+            for node in todo_notes:
+                if node.is_todo and not node.todo_completed:
+                    todos.append(node)
+                else:
+                    notes.append(node)
+            todos = sorted(todos,
+                           key=attrgetter(note_order_by),
                            reverse=note_order_desc)
-            notes = list(filter(lambda node: not node.is_todo or
-                                node.todo_completed, todo_notes))
-            notes = sorted(notes, key=attrgetter(note_order_by),
+            notes = sorted(notes,
+                           key=attrgetter(note_order_by),
                            reverse=note_order_desc)
             todo_notes = todos + notes
         else:
-            todo_notes = sorted(todo_notes, key=attrgetter(note_order_by),
+            todo_notes = sorted(todo_notes,
+                                key=attrgetter(note_order_by),
                                 reverse=note_order_desc)
         tree_notes = list([TreeNode(note) for note in todo_notes])
         for note in tree_notes:
