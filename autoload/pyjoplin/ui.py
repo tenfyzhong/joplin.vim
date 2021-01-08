@@ -224,17 +224,27 @@ def show_info():
     vim.options['lazyredraw'] = lazyredraw_saved
 
 
-def tag_titles():
+def note_tag_titles():
+    joplin_note_id = get_editting_note_id()
+    if joplin_note_id == '':
+        print('Joplin: not a note')
+        return []
+    return list(
+        [tag.title for tag in get_joplin().get_note_tags(joplin_note_id)])
+
+
+def all_tag_titles():
     tags = get_joplin().get_all(TagNode)
     titles = list([tag.title for tag in tags])
     return titles
 
 
 def tag2bvar(**kwargs):
-    if 'var' not in kwargs:
+    if 'var' not in kwargs or 'tagfunc' not in kwargs:
         return
     var = kwargs['var']
-    titles = tag_titles()
+    tagfunc = kwargs['tagfunc']
+    titles = eval(tagfunc + '()')
     vim.current.buffer.vars[var] = titles
 
 
@@ -260,6 +270,21 @@ def tag_add(**kwargs):
         find = get_joplin().post(TagNode(title=title))
     if find is not None:
         get_joplin().post_tag_note(find.id, joplin_note_id)
+
+
+def tag_del(**kwargs):
+    if 'title' not in kwargs:
+        return
+    title = kwargs['title']
+    joplin_note_id = get_editting_note_id()
+    if joplin_note_id == '':
+        print('Joplin: not a note')
+        return
+    tags = list(
+        filter(lambda tag: tag.title == title,
+               get_joplin().get_note_tags(joplin_note_id)))
+    if len(tags) > 0:
+        get_joplin().delete_tag_note(tags[0].id, joplin_note_id)
 
 
 def convert_type():
@@ -449,7 +474,10 @@ def edit(command, treenode):
         'command! -buffer -nargs=0 JoplinNoteInfo python3 pyjoplin.run("show_info")'
     )
     vim.command(
-        'command! -buffer -nargs=1 -complete=customlist,JoplinTagComplete JoplinTagAdd python3 pyjoplin.run("tag_add", title=<q-args>)'
+        'command! -buffer -nargs=1 -complete=customlist,JoplinAllTagComplete JoplinTagAdd python3 pyjoplin.run("tag_add", title=<q-args>)'
+    )
+    vim.command(
+        'command! -buffer -nargs=1 -complete=customlist,JoplinNoteTagComplete JoplinTagDel python3 pyjoplin.run("tag_del", title=<q-args>)'
     )
     vim.command(
         'command! -buffer -nargs=0 JoplinConvertType python3 pyjoplin.run("convert_type")'
