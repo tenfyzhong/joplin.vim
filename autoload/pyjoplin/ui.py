@@ -507,21 +507,18 @@ def edit(command, treenode):
     vim.command('redraw!')
     vim.options['lazyredraw'] = lazyredraw_saved
     vim.command('autocmd BufWritePost <buffer> python3 pyjoplin.run("write")')
+    vim.command('command! -buffer -nargs=0 JoplinNoteInfo python3 '
+                'pyjoplin.run("show_info")')
     vim.command(
-        'command! -buffer -nargs=0 JoplinNoteInfo python3 pyjoplin.run("show_info")'
-    )
+        'command! -buffer -nargs=1 -complete=customlist,JoplinAllTagComplete '
+        'JoplinTagAdd python3 pyjoplin.run("tag_add", title=<q-args>)')
     vim.command(
-        'command! -buffer -nargs=1 -complete=customlist,JoplinAllTagComplete JoplinTagAdd python3 pyjoplin.run("tag_add", title=<q-args>)'
-    )
-    vim.command(
-        'command! -buffer -nargs=1 -complete=customlist,JoplinNoteTagComplete JoplinTagDel python3 pyjoplin.run("tag_del", title=<q-args>)'
-    )
-    vim.command(
-        'command! -buffer -nargs=0 JoplinConvertType python3 pyjoplin.run("convert_type")'
-    )
-    vim.command(
-        'command! -buffer -nargs=0 JoplinTodoComplete python3 pyjoplin.run("todo_complete")'
-    )
+        'command! -buffer -nargs=1 -complete=customlist,JoplinNoteTagComplete '
+        'JoplinTagDel python3 pyjoplin.run("tag_del", title=<q-args>)')
+    vim.command('command! -buffer -nargs=0 JoplinConvertType python3 '
+                'pyjoplin.run("convert_type")')
+    vim.command('command! -buffer -nargs=0 JoplinTodoComplete python3 '
+                'pyjoplin.run("todo_complete")')
 
 
 def go_to_previous_win():
