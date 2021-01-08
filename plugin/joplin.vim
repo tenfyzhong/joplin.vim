@@ -14,14 +14,14 @@ if !exists('g:joplin_token')
 endif
 
 function! JoplinAllTagComplete(A, L, P)
-  python3 pyjoplin.run('tag2bvar', tagfunc='all_tag_titles', var='tag_titles')
+  python3 pyjoplin.run('works2bvar', wordsfunc='all_tag_titles', var='tag_titles')
   let tag_titles = get(b:, 'tag_titles', [])
   call filter(tag_titles, printf('v:val =~ "^".a:A'))
   return tag_titles
 endfunction
 
 function! JoplinNoteTagComplete(A, L, P)
-  python3 pyjoplin.run('tag2bvar', tagfunc='note_tag_titles', var='tag_titles')
+  python3 pyjoplin.run('works2bvar', wordsfunc='note_tag_titles', var='tag_titles')
   let tag_titles = get(b:, 'tag_titles', [])
   call filter(tag_titles, printf('v:val =~ "^".a:A'))
   return tag_titles

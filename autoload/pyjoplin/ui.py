@@ -237,12 +237,12 @@ def all_tag_titles():
     return titles
 
 
-def tag2bvar(**kwargs):
-    if 'var' not in kwargs or 'tagfunc' not in kwargs:
+def works2bvar(**kwargs):
+    if 'var' not in kwargs or 'wordsfunc' not in kwargs:
         return
     var = kwargs['var']
-    tagfunc = kwargs['tagfunc']
-    titles = eval(tagfunc + '()')
+    wordsfunc = kwargs['wordsfunc']
+    titles = eval(wordsfunc + '()')
     vim.current.buffer.vars[var] = titles
 
 
@@ -575,6 +575,14 @@ def attach(**kwargs):
     prefix = '!' if resource.mime.startswith(r'image/') else ''
     text = '%s[%s](:/%s)' % (prefix, title, resource.id)
     vim.command('normal! a' + text)
+
+
+def link_resource(**kwargs):
+    pass
+
+
+def link_note(**kwargs):
+    pass
 
 
 def cmd_o():
