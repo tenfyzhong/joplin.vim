@@ -19,9 +19,16 @@ class Joplin(object):
         :returns: bool
 
         """
-        url = self.base_url + 'ping'
-        r = requests.get(url)
-        return r.status_code == 200 and r.text == 'JoplinClipperServer'
+        url = self.base_url + '/ping'
+        succ = False
+        try:
+            r = requests.get(url)
+            succ = r.status_code == 200 and r.text == 'JoplinClipperServer'
+        except requests.ConnectionError:
+            print('Joplin: joplin.app not available')
+        except Exception:
+            print('Joplin: joplin.app error')
+        return succ
 
     def search(self, query, typ=None):
         """search data
@@ -50,11 +57,19 @@ class Joplin(object):
         fields = list(filter(lambda field: field != 'body', cls().fields()))
         fields_str = ','.join(fields)
         url += '&fields=' + fields_str
-        r = requests.get(url)
-        if r.status_code != 200:
-            print('Joplin:', url, r.status_code, r.text)
+        json = {}
+        try:
+            r = requests.get(url)
+            if r.status_code != 200:
+                print('Joplin:', url, r.status_code, r.text)
+                return None, False
+            json = r.json()
+        except requests.ConnectionError:
+            print('Joplin: joplin.app not available')
             return None, False
-        json = r.json()
+        except Exception:
+            print('Joplin: joplin.app error')
+            return None, False
         items = json['items']
         has_more = json['has_more']
         objects = list([cls(**item) for item in items])
@@ -97,11 +112,19 @@ class Joplin(object):
         fields_str = ','.join(fields)
         url = '%s/%s/%s?token=%s&fields=%s' % (self.base_url, cls.path(), id,
                                                self.token, fields_str)
-        r = requests.get(url)
-        if r.status_code != 200:
-            print('Joplin:', url, r.status_code, r.text)
+        json = {}
+        try:
+            r = requests.get(url)
+            if r.status_code != 200:
+                print('Joplin:', url, r.status_code, r.text)
+                return None
+            json = r.json()
+        except requests.ConnectionError:
+            print('Joplin: joplin.app not available')
             return None
-        json = r.json()
+        except Exception:
+            print('Joplin: joplin.app error')
+            return None
         return cls(**json)
 
     def post(self, o):
@@ -112,11 +135,20 @@ class Joplin(object):
 
         """
         url = '%s/%s?token=%s' % (self.base_url, o.path(), self.token)
-        r = requests.post(url, json=o.dict())
-        if r.status_code != 200:
-            print('Joplin:', url, r.status_code, r.text)
+        json = {}
+        try:
+            r = requests.post(url, json=o.dict())
+            if r.status_code != 200:
+                print('Joplin:', url, r.status_code, r.text)
+                return None
+            json = r.json()
+        except requests.ConnectionError:
+            print('Joplin: joplin.app not available')
             return None
-        return o.new(**r.json())
+        except Exception:
+            print('Joplin: joplin.app error')
+            return None
+        return o.new(**json)
 
     def put(self, o):
         """Sets the properties of the object
@@ -125,11 +157,20 @@ class Joplin(object):
         :returns: new object
         """
         url = '%s/%s/%s?token=%s' % (self.base_url, o.path(), o.id, self.token)
-        r = requests.put(url, json=o.dict())
-        if r.status_code != 200:
-            print('Joplin:', url, r.status_code, r.text)
+        json = {}
+        try:
+            r = requests.put(url, json=o.dict())
+            if r.status_code != 200:
+                print('Joplin:', url, r.status_code, r.text)
+                return None
+            json = r.json()
+        except requests.ConnectionError:
+            print('Joplin: joplin.app not available')
             return None
-        return o.new(**r.json())
+        except Exception:
+            print('Joplin: joplin.app error')
+            return None
+        return o.new(**json)
 
     def delete(self, cls, id):
         """delete object with id
@@ -140,9 +181,14 @@ class Joplin(object):
 
         """
         url = '%s/%s/%s?token=%s' % (self.base_url, cls.path(), id, self.token)
-        r = requests.delete(url)
-        if r.status_code != 200:
-            print('Joplin:', url, r.status_code, r.text)
+        try:
+            r = requests.delete(url)
+            if r.status_code != 200:
+                print('Joplin:', url, r.status_code, r.text)
+        except requests.ConnectionError:
+            print('Joplin: joplin.app not available')
+        except Exception:
+            print('Joplin: joplin.app error')
 
     def get_note_tags(self, id):
         """Gets all the tags attached to this note
@@ -191,11 +237,20 @@ class Joplin(object):
 
         """
         url = '%s/resources/%s/file?token=%s' % (self.base_url, id, self.token)
-        r = requests.get(url)
-        if r.status_code != 200:
-            print('Joplin:', url, r.status_code, r.text)
-            return None
-        return r.text
+        text = ''
+        try:
+            r = requests.get(url)
+            if r.status_code != 200:
+                print('Joplin:', url, r.status_code, r.text)
+                return None
+            text = r.text
+        except requests.ConnectionError:
+            print('Joplin: joplin.app not available')
+            return ''
+        except Exception:
+            print('Joplin: joplin.app error')
+            return ''
+        return text
 
     def get_resource_notes(self,
                            id,
@@ -224,13 +279,21 @@ class Joplin(object):
         payload = {
             'props': json.dumps(resource.dict()),
         }
-        r = requests.post(url,
-                          files={'data': open(filename, 'rb')},
-                          data=payload)
-        if r.status_code != 200:
-            print('Joplin:', url, r.status_code, r.text)
+        j = {}
+        try:
+            r = requests.post(url,
+                              files={'data': open(filename, 'rb')},
+                              data=payload)
+            if r.status_code != 200:
+                print('Joplin:', url, r.status_code, r.text)
+                return None
+            j = r.json()
+        except requests.ConnectionError:
+            print('Joplin: joplin.app not available')
             return None
-        j = r.json()
+        except Exception:
+            print('Joplin: joplin.app error')
+            return None
         return ResourceNode(**j)
 
     def get_tag_notes(self, id, order_by='updated_time', order_dir='DESC'):
@@ -256,9 +319,14 @@ class Joplin(object):
         """
         url = '%s/tags/%s/notes?token=%s' % (self.base_url, id, self.token)
         payload = {'id': note_id}
-        r = requests.post(url, json=payload)
-        if r.status_code != 200:
-            print('Joplin:', url, r.status_code, r.text)
+        try:
+            r = requests.post(url, json=payload)
+            if r.status_code != 200:
+                print('Joplin:', url, r.status_code, r.text)
+        except requests.ConnectionError:
+            print('Joplin: joplin.app not available')
+        except Exception:
+            print('Joplin: joplin.app error')
 
     def delete_tag_note(self, id, note_id):
         """Remove the tag from the note
@@ -270,6 +338,11 @@ class Joplin(object):
         """
         url = '%s/tags/%s/notes/%s?token=%s' % (self.base_url, id, note_id,
                                                 self.token)
-        r = requests.delete(url)
-        if r.status_code != 200:
-            print('Joplin:', url, r.status_code, r.text)
+        try:
+            r = requests.delete(url)
+            if r.status_code != 200:
+                print('Joplin:', url, r.status_code, r.text)
+        except requests.ConnectionError:
+            print('Joplin: joplin.app not available')
+        except Exception:
+            print('Joplin: joplin.app error')

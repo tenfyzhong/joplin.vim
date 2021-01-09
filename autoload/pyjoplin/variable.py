@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 from . import options
 from . import joplin
 from . import tree
@@ -15,20 +14,27 @@ def get_joplin():
     if _j is None:
         if options.token == '':
             print('Joplin: g:joplin_token is empty')
-            sys.exit(-1)
+            return None
 
-        _j = joplin.Joplin(options.token, options.host, options.port)
-        if _j is None:
+        j = joplin.Joplin(options.token, options.host, options.port)
+        if j is None:
             print('Joplin: can not create joplin instance')
-            sys.exit(-1)
+            return None
+        if not j.ping():
+            print('Joplin: can not create joplin instance')
+            return None
+
+        _j = j
     return _j
 
 
 def root_treenodes():
     global _treenodes
     if _treenodes is None:
-        _treenodes = tree.construct_folder_tree(get_joplin(),
-                                                options.folder_order_by,
+        j = get_joplin()
+        if j is None:
+            return []
+        _treenodes = tree.construct_folder_tree(j, options.folder_order_by,
                                                 options.folder_order_desc)
     return _treenodes
 
