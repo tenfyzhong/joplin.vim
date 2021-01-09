@@ -517,13 +517,14 @@ def cmd_note_info(note_id, **kwargs):
     infos = []
     infos.append('Information for %s' % note.title)
     infos.append((vim.options['columns'] - 1) * '=')
-    infos.append('id         : %s' % note_id)
-    infos.append('update time: %s' % datetime.fromtimestamp(
+    infos.append('Id            : %s' % note_id)
+    infos.append('Markdown link : [%s](:/%s)' % (note.title, note_id))
+    infos.append('Update time   : %s' % datetime.fromtimestamp(
         note.updated_time / 1000.0).strftime('%Y-%m-%d %H:%M:%S'))
-    infos.append('create time: %s' % datetime.fromtimestamp(
+    infos.append('Create time   : %s' % datetime.fromtimestamp(
         note.created_time / 1000.0).strftime('%Y-%m-%d %H:%M:%S'))
     tags = list([tag.title for tag in get_joplin().get_note_tags(note_id)])
-    infos.append('tags       : %s' % str(tags))
+    infos.append('Tags          : %s' % str(tags))
     cmdheight_saved = vim.options['cmdheight']
     lazyredraw_saved = vim.options['lazyredraw']
     vim.options['cmdheight'] = len(infos) + 2
