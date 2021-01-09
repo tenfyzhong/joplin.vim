@@ -535,6 +535,7 @@ def set_editting_note_info(id, line):
 
 def edit(command, treenode):
     lazyredraw_saved = vim.options['lazyredraw']
+    winview_saved = vim.Function('winsaveview')()
     dirname = vim.eval('tempname()')
     os.mkdir(dirname)
     filename = dirname + '/' + treenode.node.title + '.md'
@@ -550,6 +551,7 @@ def edit(command, treenode):
     if winnr < 0:
         note_bufname = vim.Function('bufname')()
         open_window()
+        vim.Function('winrestview')(winview_saved)
         winnr = vim.Function('bufwinnr')(note_bufname)
         vim.command('%dwincmd w' % winnr)
 
@@ -690,7 +692,7 @@ def cmd_t():
     if treenode is None:
         return
 
-    if treenode.is_folder():
+    if not treenode.is_folder():
         edit('tabnew', treenode)
 
 
