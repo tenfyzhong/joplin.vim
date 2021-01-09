@@ -151,8 +151,7 @@ def open_window():
     """open joplin window
     """
     bufname_ = bufname()
-    winnr = vim.eval('bufwinnr("%s")' % bufname_)
-    winnr = int(winnr)
+    winnr = vim.Function('bufwinnr')(bufname_)
     if winnr != -1:
         vim.command('%dwincmd w' % winnr)
         return
@@ -545,6 +544,15 @@ def edit(command, treenode):
     vim.options['lazyredraw'] = True
     vim.current.buffer[:] = treenode.node.body.split('\n')
     vim.command('silent noautocmd w')
+    # check joplin window
+    # reopen if not exist
+    winnr = vim.Function('bufwinnr')(bufname())
+    if winnr < 0:
+        note_bufname = vim.Function('bufname')()
+        open_window()
+        winnr = vim.Function('bufwinnr')(note_bufname)
+        vim.command('%dwincmd w' % winnr)
+
     vim.command('redraw!')
     vim.options['lazyredraw'] = lazyredraw_saved
     vim.command('autocmd BufWritePost <buffer> python3 pyjoplin.run("write")')
