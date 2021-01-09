@@ -243,8 +243,39 @@ def all_resource_titles():
     return titles
 
 
-def note_match_titles(arg_lead):
-    pass
+def note_match_titles(**kwargs):
+    if 'arg_lead' not in kwargs or 'var' not in kwargs:
+        return
+    arg_lead = kwargs['arg_lead']
+    var = kwargs['var']
+    vim.current.buffer.vars[var] = []
+    if _treenodes is None:
+        return
+    path = arg_lead.split(r'/')
+    path = list(filter(lambda p: re.match(r'^\s*$', p) is None, path))
+    if len(path) == 0:
+        return
+    last_part = path[-1]
+    path = path[:-1]
+    dirname = '/'.join(path)
+    dirname += '/' if len(dirname) > 0 else ''
+    nodes = _treenodes
+    for p in path:
+        nodes = list(filter(lambda node: node.is_folder() and
+                            node.node.title == p, nodes))
+        if len(nodes) == 0:
+            return
+        nodes = nodes[0].children
+
+    if len(nodes) == 0:
+        return
+    titles = list(map(lambda node: node.node.title + '/' if
+                      node.is_folder() else
+                      node.node.title, nodes))
+    matched = list(filter(lambda title: title.startswith(last_part), titles))
+    matched = list(map(lambda title: dirname + title, matched))
+    vim.current.buffer.vars[var] = matched
+    return
 
 
 def works2bvar(**kwargs):
