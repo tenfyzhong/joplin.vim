@@ -9,15 +9,15 @@ if pwd not in sys.path:
 import pyjoplin
 EOF
 
-function! joplin#open()
+function! joplin#open() abort
   python3 pyjoplin.run('open_window')
 endfunction
 
-function! joplin#close()
+function! joplin#close() abort
   python3 pyjoplin.run('close_window')
 endfunction
 
-function! joplin#toggle()
+function! joplin#toggle() abort
   python3 pyjoplin.run('toggle_window')
 endfunction
 

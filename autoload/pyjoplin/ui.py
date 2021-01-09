@@ -51,14 +51,14 @@ def set_options():
 
 def set_map():
     for lhs in variable.unmap:
-        cmd = 'nnoremap <script><silent><buffer>%s <nop>' % lhs
+        cmd = 'nnoremap <script><buffer>%s <nop>' % lhs
         vim.command(cmd)
     for lhs, rhs in variable.treenode_mapping.items():
-        cmd = 'nnoremap <script><silent><buffer>%s <esc>:<c-u>python3 ' \
+        cmd = 'nnoremap <script><buffer>%s <esc>:<c-u>python3 ' \
                 'pyjoplin.treenode_cmd("%s")<cr>' % (lhs, rhs)
         vim.command(cmd)
     for lhs, rhs in variable.win_mapping.items():
-        cmd = 'nnoremap <script><silent><buffer>%s <esc>:<c-u>python3 ' \
+        cmd = 'nnoremap <script><buffer>%s <esc>:<c-u>python3 ' \
                 'pyjoplin.run("%s")<cr>' % (lhs, rhs)
         vim.command(cmd)
 
@@ -669,16 +669,20 @@ def cmd_resource_attach(note_id, **kwargs):
 
 def cmd_link_resource(note_id, **kwargs):
     if 'title' not in kwargs:
+        print('Joplin: please select a resource')
         return
     title = kwargs['title']
     resources = get_joplin().get_all(ResourceNode)
     matched = list(filter(lambda resource: resource.title == title, resources))
-    if len(matched) > 0:
-        insert_resource(matched[0])
+    if len(matched) == 0:
+        print('Joplin: not such resource <%s>' % title)
+        return
+    insert_resource(matched[0])
 
 
 def cmd_link_note(note_id, **kwargs):
     if 'title' not in kwargs:
+        print('Joplin: please select a note')
         return
     title = kwargs['title']
     path = title.split('/')
@@ -687,9 +691,11 @@ def cmd_link_note(note_id, **kwargs):
     for p in path:
         match = list(filter(lambda node: node.node.title == p, root.children))
         if len(match) == 0:
+            print('Joplin: not such note <%s>' % title)
             return
         root = match[0]
     if root.node is None:
+        print('Joplin: not such note <%s>' % title)
         return
     text = '[%s](:/%s)' % (root.node.title, root.node.id)
     vim.command('normal! a' + text)
