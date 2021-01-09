@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from .node import FolderNode, NoteNode
 from operator import attrgetter
+
+from .node import FolderNode, NoteNode
 
 
 class TreeNode(object):

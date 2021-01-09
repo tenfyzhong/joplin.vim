@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
+import time
+
 from joplin import Joplin
 from node import *
-import time
-import os
 
 
 def create_folder(j, new_folder_title):

@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import requests
 import json
 
-from .node import factory_node, NoteNode, ResourceNode, TagNode
+import requests
+
+from .node import NoteNode, ResourceNode, TagNode, factory_node
 
 
 class Joplin(object):

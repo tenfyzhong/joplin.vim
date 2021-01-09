@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from . import options
-from . import joplin
-from . import tree
+from . import joplin, options, tree
 
 _j = None
 _treenodes = None

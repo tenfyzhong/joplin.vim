@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import vim
-from .variable import get_joplin, bufname, root_treenodes
-from . import variable
 import os
 import re
-from .node import NoteNode, TagNode, ResourceNode
-from .tree import TreeNode
-from . import options
 from datetime import datetime
+
+import vim
+
+from . import options, variable
+from .node import NoteNode, ResourceNode, TagNode
+from .tree import TreeNode
+from .variable import bufname, get_joplin, root_treenodes
 
 props = {
     'joplin_folder': 'Identifier',
