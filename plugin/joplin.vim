@@ -35,9 +35,9 @@ endfunction
 
 function! JoplinNoteComplete(A, L, P)
   let var = 'note_complete_word'
-  exec printf("python3 pyjoplin.run('note_match_titles', arg_lead='%s', var='%s')", a:A, var)
-  let words = get(b:, var, [])
-  return words
+  exec printf("python3 pyjoplin.run('note_match_text', arg_lead='%s', var='%s')", a:A, var)
+  let text = get(b:, var, '')
+  return text
 endfunction
 
 command! JoplinOpen silent call joplin#open()

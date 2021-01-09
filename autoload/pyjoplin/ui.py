@@ -7,6 +7,7 @@ import os
 import sys
 import re
 from .node import NoteNode, TagNode, ResourceNode
+from .tree import TreeNode
 from datetime import datetime
 
 _treenodes = None
@@ -243,38 +244,38 @@ def all_resource_titles():
     return titles
 
 
-def note_match_titles(**kwargs):
+def note_match_text(**kwargs):
     if 'arg_lead' not in kwargs or 'var' not in kwargs:
         return
     arg_lead = kwargs['arg_lead']
     var = kwargs['var']
-    vim.current.buffer.vars[var] = []
+    vim.current.buffer.vars[var] = ''
     if _treenodes is None:
         return
     path = arg_lead.split(r'/')
-    path = list(filter(lambda p: re.match(r'^\s*$', p) is None, path))
-    if len(path) == 0:
-        return
-    last_part = path[-1]
-    path = path[:-1]
+    path = list(filter(lambda p: re.match(r'^\s*$', p) is None, path[:-1]))
     dirname = '/'.join(path)
-    dirname += '/' if len(dirname) > 0 else ''
     nodes = _treenodes
     for p in path:
-        nodes = list(filter(lambda node: node.is_folder() and
-                            node.node.title == p, nodes))
+        nodes = list(
+            filter(lambda node: node.is_folder() and node.node.title == p,
+                   nodes))
         if len(nodes) == 0:
             return
         nodes = nodes[0].children
 
     if len(nodes) == 0:
         return
-    titles = list(map(lambda node: node.node.title + '/' if
-                      node.is_folder() else
-                      node.node.title, nodes))
-    matched = list(filter(lambda title: title.startswith(last_part), titles))
-    matched = list(map(lambda title: dirname + title, matched))
-    vim.current.buffer.vars[var] = matched
+    for node in nodes:
+        node.fetch_folder(get_joplin(), _joplin_pin_todo,
+                          _joplin_hide_completed, _joplin_folder_order_by,
+                          _joplin_folder_order_desc, _joplin_note_order_by,
+                          _joplin_note_order_desc)
+    lines = list([dirname + '/' + node.node.title for node in nodes])
+    lines = list(
+        map(lambda line: line[1:] if line.startswith('/') else line, lines))
+    text = '\n'.join(lines)
+    vim.current.buffer.vars[var] = text
     return
 
 
@@ -327,10 +328,8 @@ def tag_del(**kwargs):
 
 
 def refresh_treenode_line(line):
-    print('line', line)
     winnr = vim.Function('bufwinnr')(bufname())
     if winnr <= 0:
-        print('can not find tree')
         return
     winnr_saved = vim.Function('winnr')()
     lazyredraw_saved = vim.options['lazyredraw']
@@ -366,7 +365,7 @@ def todo_complete(**kwargs):
         return
     note = get_joplin().get(NoteNode, joplin_note_id)
     if not note.is_todo:
-        print('Jopli: not a todo')
+        print('Joplin: not a todo')
         return
     note.todo_completed ^= 1
     get_joplin().put(note)
@@ -501,6 +500,7 @@ def get_cur_line():
 
 
 def find_treenode(nodes, lineno):
+    nodes = list(filter(lambda node: node.lineno > 0, nodes))
     i = 0
     j = len(nodes) - 1
 
@@ -568,7 +568,7 @@ def edit(command, treenode):
         '-complete=customlist,JoplinAllResourceComplete JoplinLinkResource '
         'python3 pyjoplin.run("link_resource", title=<q-args>)')
     vim.command('command! -buffer -nargs=1 '
-                '-complete=customlist,JoplinNoteComplete JoplinLinkNote '
+                '-complete=custom,JoplinNoteComplete JoplinLinkNote '
                 'python3 pyjoplin.run("link_note", title=<q-args>)')
 
 
@@ -640,7 +640,21 @@ def link_resource(**kwargs):
 
 
 def link_note(**kwargs):
-    pass
+    if 'title' not in kwargs:
+        return
+    title = kwargs['title']
+    path = title.split('/')
+    root = TreeNode()
+    root.children = _treenodes
+    for p in path:
+        match = list(filter(lambda node: node.node.title == p, root.children))
+        if len(match) == 0:
+            return
+        root = match[0]
+    if root.node is None:
+        return
+    text = '[%s](:/%s)' % (root.node.title, root.node.id)
+    vim.command('normal! a' + text)
 
 
 def cmd_o():
@@ -737,6 +751,8 @@ def close_recurisive(node):
 
 def cmd_X():
     treenode = get_cur_line()
+    if treenode is None:
+        return
     if not treenode.is_folder():
         return
     close_recurisive(treenode)
@@ -746,6 +762,8 @@ def cmd_X():
 
 def cmd_r():
     treenode = get_cur_line()
+    if treenode is None:
+        return
     lastnode = treenode
     if not treenode.is_folder():
         treenode = treenode.parent
@@ -756,6 +774,8 @@ def cmd_r():
 
 def cmd_R():
     treenode = get_cur_line()
+    if treenode is None:
+        return
     lastnode = treenode
     while treenode.parent is not None:
         treenode = treenode.parent
@@ -841,3 +861,9 @@ def cmd_question_mark():
     vim.current.buffer.vars['joplin_help'] = not joplin_help
     render()
     vim.Function('cursor')(1, 1)
+
+
+def debug_tree(treenodes):
+    for node in treenodes:
+        print(node.lineno, node.text('', '', '', '', ''))
+        debug_tree(node.children)
