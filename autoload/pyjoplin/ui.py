@@ -104,6 +104,40 @@ def write(note_id, **kwargs):
     get_joplin().put(note)
 
 
+def saveas(**kwargs):
+    if 'folder' not in kwargs:
+        print('Joplin: please select a notebook')
+        return
+    folder = kwargs['folder']
+    path = folder.split('/')
+    root = TreeNode()
+    root.children = root_treenodes()
+    for p in path:
+        match = list(
+            filter(lambda node: node.node.title == p and node.is_folder(),
+                   root.children))
+        if len(match) == 0:
+            print('Joplin: not such notebook<%s>' % folder)
+            return
+        root = match[0]
+
+    if root.node is None:
+        print('Joplin: not such notebook <%s>' % folder)
+        return
+
+    note = NoteNode(parent_id=root.node.id)
+    body = '\n'.join(vim.current.buffer[:])
+    note.title = vim.Function('expand')('%:p:t').decode()
+    note.body = body
+    note = get_joplin().post(note)
+    if note is None:
+        print('Joplin: New note failed')
+        return
+    note_local_setting()
+    vim.current.buffer.vars['joplin_note_id'] = note.id
+    vim.command('noautocmd w')
+
+
 def prop_add(nr, prop_type, col_begin=1, col_end=0):
     if prop_type == '':
         return
@@ -334,6 +368,33 @@ def note_match_text(**kwargs):
                           options.hide_completed, options.folder_order_by,
                           options.folder_order_desc, options.note_order_by,
                           options.note_order_desc)
+    lines = list([dirname + '/' + node.node.title for node in nodes])
+    lines = list(
+        map(lambda line: line[1:] if line.startswith('/') else line, lines))
+    text = '\n'.join(lines)
+    vim.current.buffer.vars[var] = text
+
+
+def folder_match_text(**kwargs):
+    if 'arg_lead' not in kwargs or 'var' not in kwargs:
+        return
+    arg_lead = kwargs['arg_lead']
+    var = kwargs['var']
+    vim.current.buffer.vars[var] = ''
+    path = arg_lead.split(r'/')
+    path = list(filter(lambda p: re.match(r'^\s*$', p) is None, path[:-1]))
+    dirname = '/'.join(path)
+    nodes = root_treenodes()
+    for p in path:
+        nodes = list(
+            filter(lambda node: node.is_folder() and node.node.title == p,
+                   nodes))
+        if len(nodes) == 0:
+            return
+        nodes = nodes[0].children
+
+    if len(nodes) == 0:
+        return
     lines = list([dirname + '/' + node.node.title for node in nodes])
     lines = list(
         map(lambda line: line[1:] if line.startswith('/') else line, lines))
