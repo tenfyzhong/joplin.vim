@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# import os
 
-# from joplin import Joplin
 from .node import FolderNode, NoteNode
 from operator import attrgetter
 

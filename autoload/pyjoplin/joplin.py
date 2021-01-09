@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import requests
 import json
-# import os
 
 from .node import factory_node, NoteNode, ResourceNode, TagNode
 

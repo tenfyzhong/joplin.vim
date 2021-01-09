@@ -40,9 +40,9 @@ function! JoplinNoteComplete(A, L, P)
   return text
 endfunction
 
-command! JoplinOpen silent call joplin#open()
-command! JoplinClose silent call joplin#close()
-command! Joplin silent call joplin#toggle()
+command! -nargs=0 JoplinWinOpen silent call joplin#open()
+command! -nargs=0 JoplinWinClose silent call joplin#close()
+command! -nargs=0 Joplin silent call joplin#toggle()
 
 augroup joplin_init
   autocmd!
