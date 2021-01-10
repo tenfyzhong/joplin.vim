@@ -626,6 +626,7 @@ def cmd_note_info(note_id, **kwargs):
         'title': title,
         'filter': 'joplin#popup#info_filter',
         'highlight': 'InfoMenu',
+        'mapping': 0,
     })
 
 
