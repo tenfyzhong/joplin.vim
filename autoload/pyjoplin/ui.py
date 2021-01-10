@@ -571,25 +571,7 @@ def cmd_question_mark():
     vim.Function('cursor')(1, 1)
 
 
-# ============================== menu cmds
-def menu_callback(treenode, **kwargs):
-    if 'result' not in kwargs:
-        return
-    result = kwargs['result']
-    if result > len(menu_items) or result <= 0:
-        return
-    menu_items[result - 1].callback(treenode)
-
-
-def menu_add(treenode):
-    print('add', treenode.node.title)
-
-
-def menu_move(treenode):
-    print('move', treenode.node.title)
-
-
-def menu_delete(treenode):
+def cmd_dd(treenode):
     prompt = ''
     if treenode.is_folder():
         prompt = 'Delete notebook <%s>?*All notes and sub-notebooks within ' \
@@ -601,11 +583,12 @@ def menu_delete(treenode):
     # select = vim.Function('input')(prompt)
     vim.command('echo "Joplin: %s"' % prompt)
     select = 0
-    # 89 == Y, 121 == y, 78 == N, 110 == n
-    while select not in [89, 121, 78, 110]:
+    # 89 == Y, 121 == y, 78 == N, 110 == n, 27 == <esc>, 13 == <cr>
+    while True:
         select = vim.Function('getchar')()
         if select in [89, 121]:
             get_joplin().delete(cls, treenode.node.id)
+            vim.command('redraw!')
             vim.command('echo "Joplin: <%s> deleted"' % treenode.node.title)
             line = vim.Function('line')('.')
             if treenode.parent is None:
@@ -617,46 +600,23 @@ def menu_delete(treenode):
                 render()
 
             vim.Function('cursor')(line, 1)
-        elif select in [78, 110]:
+            break
+        elif select in [78, 110, 27, 13]:
+            vim.command('redraw!')
             vim.command('echo "Joplin: delete aborted"')
+            break
 
 
-def menu_copy(treenode):
-    print('copy', treenode.node.title)
+def cmd_a(**kwargs):
+    pass
 
 
-class MenuItem(object):
-    def __init__(self, text, indicator_index, callback):
-        self.text = text
-        self.indicator_index = indicator_index
-        self.callback = callback
+def cmd_c(treenode, **kwargs):
+    pass
 
 
-menu_items = [
-    MenuItem('add a childnode', 0, menu_add),
-    MenuItem('move the current code', 0, menu_move),
-    MenuItem('delete the current node', 0, menu_delete),
-    MenuItem('copy the current node', 0, menu_copy)
-]
-
-
-def cmd_m():
-    text = list([{
-        'text':
-        item.text,
-        'props': [{
-            'type': 'joplin_popup_indicator',
-            'col': item.indicator_index + 1,
-            'length': 1
-        }],
-    } for item in menu_items])
-
-    vim.Function('popup_menu')(text, {
-        'title': 'Joplin menu',
-        'filter': 'joplin#popup#menu_filter',
-        'callback': 'joplin#popup#menu_callback',
-    })
-    vim.command('echo "%s"' % variable.menu_popup_guide)
+def cmd_m(treenode, **kwargs):
+    pass
 
 
 # ============================== note cmds
