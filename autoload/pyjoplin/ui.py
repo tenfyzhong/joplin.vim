@@ -698,14 +698,12 @@ def cmd_link_note(note_id, **kwargs):
     if root.node is None:
         print('Joplin: not such note <%s>' % title)
         return
-    text = '[%s](:/%s)' % (root.node.title, root.node.id)
-    vim.command('normal! a' + text)
+    vim.command('normal! a' + root.node.markdown_link())
 
 
 # ============================== util for cmd function
 def insert_resource(resource):
-    prefix = '!' if resource.mime.startswith(r'image/') else ''
-    text = '%s[%s](:/%s)' % (prefix, resource.title, resource.id)
+    text = resource.markdown_link()
     vim.command('normal! a' + text)
 
 

@@ -49,6 +49,9 @@ class Node(object):
         self = o
         return self
 
+    def markdown_link(self):
+        return '[%s](:/%s)' % (self.title, self.id)
+
 
 class NoteNode(Node):
     """Node for note"""
@@ -99,6 +102,10 @@ class ResourceNode(Node):
     @classmethod
     def path(cls):
         return 'resources'
+
+    def markdown_link(self):
+        prefix = '!' if self.mime.startswith('image/') else ''
+        return prefix + super().markdown_link()
 
 
 class TagNode(Node):
