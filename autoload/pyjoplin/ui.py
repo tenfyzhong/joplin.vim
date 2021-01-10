@@ -67,6 +67,20 @@ def set_map():
         vim.command(cmd)
 
 
+def set_command():
+    vim.command(
+        'command! -buffer -complete=custom,joplin#joplin_folder_complete '
+        'JoplinNodeAdd call python3 pyjoplin.run("cmd_a", path=<q-args>)')
+    vim.command(
+        'command! -buffer -complete=custom,joplin#joplin_folder_complete '
+        'joplinNodeCopy call python3 '
+        'pyjoplin.treenode_cmd("cmd_c", path=<q-args>)')
+    vim.command(
+        'command! -buffer -complete=custom,joplin#joplin_folder_complete '
+        'joplinNodeMove call python3 '
+        'pyjoplin.treenode_cmd("cmd_m", path=<q-args>)')
+
+
 def open_window():
     """open joplin window
     """
@@ -79,6 +93,7 @@ def open_window():
                 (options.window_width, bufname_))
     set_options()
     set_map()
+    set_command()
     render()
     last_line = vim.current.buffer.vars.get('saved_last_line',
                                             len(variable.window_title) + 1)
@@ -114,22 +129,12 @@ def saveas(**kwargs):
         return
     folder = kwargs['folder']
     path = folder.split('/')
-    root = TreeNode()
-    root.children = root_treenodes()
-    for p in path:
-        match = list(
-            filter(lambda node: node.node.title == p and node.is_folder(),
-                   root.children))
-        if len(match) == 0:
-            print('Joplin: not such notebook<%s>' % folder)
-            return
-        root = match[0]
-
-    if root.node is None:
-        print('Joplin: not such notebook <%s>' % folder)
+    parent = find_folder_by_path(root_treenodes(), path)
+    if parent is None:
+        print('Joplin: not such notebook<%s>' % folder)
         return
 
-    note = NoteNode(parent_id=root.node.id)
+    note = NoteNode(parent_id=parent.node.id)
     body = '\n'.join(vim.current.buffer[:])
     note.title = vim.Function('expand')('%:p:t').decode()
     note.body = body
@@ -608,7 +613,31 @@ def cmd_dd(treenode):
 
 
 def cmd_a(**kwargs):
-    pass
+    if 'path' not in kwargs:
+        return
+    path = kwargs['path']
+
+    is_folder = False
+    if path.endswith('/'):
+        path = path[:-1]
+
+    if path == '':
+        return
+
+    items = path.split('/')
+    new_name = items[-1]
+    folders = items[:-1]
+    parent = find_folder_by_path(root_treenodes(), folders)
+    if parent is None:
+        print('Joplin: not such folder<%s>' % '/'.join(folders))
+        return
+
+    new_node = FolderNode(parent_id=parent.id,
+                          title=new_name) if is_folder else NoteNode(
+                              parent_id=parent.id, title=new_name)
+    node = get_joplin().post(new_node)
+    if node is not None:
+        refresh_render(parent)
 
 
 def cmd_c(treenode, **kwargs):
@@ -852,3 +881,20 @@ def has_help():
 def strftime(timestamp):
     return datetime.fromtimestamp(timestamp /
                                   1000.0).strftime('%Y-%m-%d %H:%M:%S')
+
+
+def find_folder_by_path(root_nodes, path):
+    root = TreeNode()
+    root.children = root_nodes
+    for p in path:
+        match = list(
+            filter(lambda node: node.node.title == p and node.is_folder(),
+                   root.children))
+        if len(match) == 0:
+            # print('Joplin: not such notebook<%s>' % folder)
+            return None
+        root = match[0]
+
+    if root.node is None:
+        # print('Joplin: not such notebook <%s>' % folder)
+        return None
