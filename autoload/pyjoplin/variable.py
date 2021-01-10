@@ -37,6 +37,18 @@ def root_treenodes():
     return _treenodes
 
 
+def delete_node_in_list(nodes, id):
+    if nodes is None or id == '':
+        return nodes
+
+    return list(filter(lambda node: node.node.id != id, nodes))
+
+
+def del_rootnode(id):
+    global _treenodes
+    _treenodes = delete_node_in_list(_treenodes, id)
+
+
 def bufname():
     return 'tree.joplin'
 
@@ -113,4 +125,6 @@ win_mapping = {
 
 unmap = ['<C-r>', 'u', 'U', 'I', 'a', 'A', 's', 'S', 'd', 'D', 'c', 'C']
 
-popup_guide = "*press 'q' to close the window*"
+info_popup_guide = "*press 'q' to close the window*"
+menu_popup_guide = "Use j:<down>/k:<up>/q:<quit>/enter,space:<select>,"\
+    " or the shortcuts indicated"

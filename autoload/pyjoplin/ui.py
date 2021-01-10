@@ -8,7 +8,7 @@ from datetime import datetime
 import vim
 
 from . import options, variable
-from .node import NoteNode, ResourceNode, TagNode
+from .node import FolderNode, NoteNode, ResourceNode, TagNode
 from .tree import TreeNode
 from .variable import bufname, get_joplin, root_treenodes
 
@@ -24,6 +24,7 @@ props = {
     'joplin_help_prefix': 'String',
     'joplin_popup_info_tag': 'Statement',
     'joplin_popup_guide': 'Comment',
+    'joplin_popup_indicator': 'MenuItemIndicator',
 }
 
 for name, highlight in props.items():
@@ -312,11 +313,11 @@ def run(funcname, **kwargs):
     eval('%s(**kwargs)' % funcname)
 
 
-def treenode_cmd(funcname):
+def treenode_cmd(funcname, **kwargs):
     treenode = get_cur_line()
     if treenode is None:
         return
-    eval("%s(treenode)" % funcname)
+    eval("%s(treenode, **kwargs)" % funcname)
 
 
 def note_cmd(funcname, **kwargs):
@@ -559,11 +560,6 @@ def cmd_ctrl_k(treenode):
         cursor(nodes[i])
 
 
-def cmd_m():
-    # TODO
-    pass
-
-
 def cmd_q():
     close_window()
 
@@ -573,6 +569,94 @@ def cmd_question_mark():
     vim.current.buffer.vars['joplin_help'] = not joplin_help
     render()
     vim.Function('cursor')(1, 1)
+
+
+# ============================== menu cmds
+def menu_callback(treenode, **kwargs):
+    if 'result' not in kwargs:
+        return
+    result = kwargs['result']
+    if result > len(menu_items) or result <= 0:
+        return
+    menu_items[result - 1].callback(treenode)
+
+
+def menu_add(treenode):
+    print('add', treenode.node.title)
+
+
+def menu_move(treenode):
+    print('move', treenode.node.title)
+
+
+def menu_delete(treenode):
+    prompt = ''
+    if treenode.is_folder():
+        prompt = 'Delete notebook <%s>?*All notes and sub-notebooks within ' \
+            'this notebook will also be deleted* (y/N): ' % treenode.node.title
+    else:
+        prompt = 'Delete note <%s>? (y/N)' % treenode.node.title
+
+    cls = FolderNode if treenode.is_folder() else NoteNode
+    # select = vim.Function('input')(prompt)
+    vim.command('echo "Joplin: %s"' % prompt)
+    select = 0
+    # 89 == Y, 121 == y, 78 == N, 110 == n
+    while select not in [89, 121, 78, 110]:
+        select = vim.Function('getchar')()
+        if select in [89, 121]:
+            get_joplin().delete(cls, treenode.node.id)
+            vim.command('echo "Joplin: <%s> deleted"' % treenode.node.title)
+            line = vim.Function('line')('.')
+            if treenode.parent is None:
+                variable.del_rootnode(treenode.node.id)
+                render()
+            else:
+                treenode.parent.children = variable.delete_node_in_list(
+                    treenode.parent.children, treenode.node.id)
+                render()
+
+            vim.Function('cursor')(line, 1)
+        elif select in [78, 110]:
+            vim.command('echo "Joplin: delete aborted"')
+
+
+def menu_copy(treenode):
+    print('copy', treenode.node.title)
+
+
+class MenuItem(object):
+    def __init__(self, text, indicator_index, callback):
+        self.text = text
+        self.indicator_index = indicator_index
+        self.callback = callback
+
+
+menu_items = [
+    MenuItem('add a childnode', 0, menu_add),
+    MenuItem('move the current code', 0, menu_move),
+    MenuItem('delete the current node', 0, menu_delete),
+    MenuItem('copy the current node', 0, menu_copy)
+]
+
+
+def cmd_m():
+    text = list([{
+        'text':
+        item.text,
+        'props': [{
+            'type': 'joplin_popup_indicator',
+            'col': item.indicator_index + 1,
+            'length': 1
+        }],
+    } for item in menu_items])
+
+    vim.Function('popup_menu')(text, {
+        'title': 'Joplin menu',
+        'filter': 'joplin#popup#menu_filter',
+        'callback': 'joplin#popup#menu_callback',
+    })
+    vim.command('echo "%s"' % variable.menu_popup_guide)
 
 
 # ============================== note cmds
@@ -614,11 +698,11 @@ def cmd_note_info(note_id, **kwargs):
     } for info in infos])
     text.append({
         'text':
-        variable.popup_guide,
+        variable.info_popup_guide,
         'props': [{
             'type': 'joplin_popup_guide',
             'col': 1,
-            'length': len(variable.popup_guide),
+            'length': len(variable.info_popup_guide),
         }]
     })
 
