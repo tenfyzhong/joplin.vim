@@ -13,6 +13,8 @@ if !exists('g:joplin_token')
   finish
 endif
 
+hi default JoplinPopup ctermfg=12 ctermbg=0 guibg=Magenta
+
 function! s:CompleteFunc(wordsfunc, var, A)
   exec printf("python3 pyjoplin.run('works2bvar', wordsfunc='%s', var='%s')", a:wordsfunc, a:var)
   let words = get(b:, a:var, [])

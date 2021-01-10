@@ -22,6 +22,8 @@ props = {
     'joplin_help_summary': 'String',
     'joplin_help_sperate': 'String',
     'joplin_help_prefix': 'String',
+    'joplin_popup_info_tag': 'Statement',
+    'joplin_popup_guide': 'Comment',
 }
 
 for name, highlight in props.items():
@@ -574,32 +576,52 @@ def cmd_question_mark():
 
 
 # ============================== note cmds
+class NoteInfo(object):
+    def __init__(self, tag, data):
+        self.tag = tag
+        self.data = data
+
+    def text(self, tag_len):
+        padding = (tag_len - len(self.tag)) * ' '
+        return self.tag + padding + ' : ' + self.data
+
+
 def cmd_note_info(note_id, **kwargs):
     note = get_joplin().get(NoteNode, note_id, ['body'])
+    title = ' Information for %s ' % note.title
     infos = []
-    infos.append('Information for %s' % note.title)
-    infos.append((vim.options['columns'] - 1) * '=')
-    infos.append('Id            : %s' % note_id)
-    infos.append('Markdown link : [%s](:/%s)' % (note.title, note_id))
-    infos.append('Update time   : %s' % datetime.fromtimestamp(
-        note.updated_time / 1000.0).strftime('%Y-%m-%d %H:%M:%S'))
-    infos.append('Create time   : %s' % datetime.fromtimestamp(
-        note.created_time / 1000.0).strftime('%Y-%m-%d %H:%M:%S'))
+    infos.append(NoteInfo('Id', note_id))
+    infos.append(NoteInfo('Markdown link', note.markdown_link()))
+    infos.append(NoteInfo('Update time', strftime(note.updated_time)))
+    infos.append(NoteInfo('Create time', strftime(note.created_time)))
     tags = list([tag.title for tag in get_joplin().get_note_tags(note_id)])
-    infos.append('Tags          : %s' % str(tags))
-    cmdheight_saved = vim.options['cmdheight']
-    lazyredraw_saved = vim.options['lazyredraw']
-    vim.options['cmdheight'] = len(infos) + 2
-    vim.options['lazyredraw'] = False
-    vim.command('redraw!')
-    for info in infos:
-        vim.command('echo "%s"' % info)
+    infos.append(NoteInfo('Tags', str(tags)))
+    max_tag_len = max([len(info.tag) for info in infos])
 
-    vim.command('echo ""')
-    vim.command('call getchar()')
-    vim.command('redraw!')
-    vim.options['cmdheight'] = cmdheight_saved
-    vim.options['lazyredraw'] = lazyredraw_saved
+    props = [{
+        'type': 'joplin_popup_info_tag',
+        'col': 1,
+        'length': max_tag_len,
+    }]
+    text = list([{
+        'text': info.text(max_tag_len),
+        'props': props
+    } for info in infos])
+    text.append({
+        'text':
+        variable.popup_guide,
+        'props': [{
+            'type': 'joplin_popup_guide',
+            'col': 1,
+            'length': len(variable.popup_guide),
+        }]
+    })
+
+    vim.Function('popup_dialog')(text, {
+        'title': title,
+        'filter': 'joplin#popup#info_filter',
+        'highlight': 'InfoMenu',
+    })
 
 
 def cmd_tag_add(note_id, **kwargs):
@@ -775,3 +797,8 @@ def go_to_previous_win():
 
 def has_help():
     return vim.current.buffer.vars.get('joplin_help', False)
+
+
+def strftime(timestamp):
+    return datetime.fromtimestamp(timestamp /
+                                  1000.0).strftime('%Y-%m-%d %H:%M:%S')

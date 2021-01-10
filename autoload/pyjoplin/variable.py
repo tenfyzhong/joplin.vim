@@ -112,3 +112,5 @@ win_mapping = {
 }
 
 unmap = ['<C-r>', 'u', 'U', 'I', 'a', 'A', 's', 'S', 'd', 'D', 'c', 'C']
+
+popup_guide = "*press 'q' to close the window*"
