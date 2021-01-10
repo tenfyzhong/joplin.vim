@@ -4,7 +4,7 @@ import json
 
 import requests
 
-from .node import NoteNode, ResourceNode, TagNode, factory_node
+from .node import FolderNode, NoteNode, ResourceNode, TagNode, factory_node
 
 
 class Joplin(object):
@@ -347,3 +347,17 @@ class Joplin(object):
             print('Joplin: joplin.app not available')
         except Exception:
             print('Joplin: joplin.app error')
+
+    def node_path(self, node):
+        if node is not None and node.type_ not in [1, 2]:
+            return ''
+
+        path = [node.title]
+        cur = node
+        while cur.parent_id != '':
+            cur = self.get(FolderNode, cur.parent_id)
+            if cur is not None:
+                path.append(cur.title)
+
+        path = reversed(path)
+        return '/'.join(path)

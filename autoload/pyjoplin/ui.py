@@ -588,13 +588,18 @@ class NoteInfo(object):
 
 def cmd_note_info(note_id, **kwargs):
     note = get_joplin().get(NoteNode, note_id, ['body'])
+    if note is None:
+        print('Joplin: not such node <%s>' % note_id)
+        return
     title = ' Information for %s ' % note.title
+    path = get_joplin().node_path(note)
+    tags = list([tag.title for tag in get_joplin().get_note_tags(note_id)])
     infos = []
     infos.append(NoteInfo('Id', note_id))
+    infos.append(NoteInfo('Path', path))
     infos.append(NoteInfo('Markdown link', note.markdown_link()))
     infos.append(NoteInfo('Update time', strftime(note.updated_time)))
     infos.append(NoteInfo('Create time', strftime(note.created_time)))
-    tags = list([tag.title for tag in get_joplin().get_note_tags(note_id)])
     infos.append(NoteInfo('Tags', str(tags)))
     max_tag_len = max([len(info.tag) for info in infos])
 
