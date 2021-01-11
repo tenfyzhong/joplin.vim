@@ -66,17 +66,6 @@ def set_map():
                 'pyjoplin.run("%s")<cr>' % (lhs, rhs)
         vim.command(cmd)
 
-    vim.command('nnoremap <script><buffer>cp <esc>:<c-u>JoplinNodeCopyTo ')
-
-
-def set_command():
-    vim.command(
-        'command! -buffer -complete=custom,joplin#joplin_folder_complete '
-        '-nargs=1 JoplinNodeCopyTo python3 '
-        'pyjoplin.treenode_cmd("cmd_node_cp", path=<q-args>)')
-    vim.command('command! -buffer -nargs=0 JoplinNodeDelete python3 '
-                'pyjoplin.treenode_cmd("cmd_dd")')
-
 
 def open_window():
     """open joplin window
@@ -90,7 +79,6 @@ def open_window():
                 (options.window_width, bufname_))
     set_options()
     set_map()
-    set_command()
     render()
     last_line = vim.current.buffer.vars.get('saved_last_line',
                                             len(variable.window_title) + 1)
@@ -585,6 +573,7 @@ def cmd_a(**kwargs):
         "Notebook end with a '/'"
     path = input_path(prompt, 'Path: ', default_path)
     if path == '':
+        print('Joplin: please enter a new name')
         return
 
     is_folder = False
@@ -618,6 +607,7 @@ def cmd_mv(treenode):
     prompt2 = 'Move %s to: ' % treenode.node.title
     path = input_path(prompt1, prompt2, default_path)
     if path == '':
+        print('Joplin: please select a notebook')
         return
 
     folders = path.split('/')
@@ -631,6 +621,61 @@ def cmd_mv(treenode):
         else get_joplin().get(NoteNode, treenode.node.id)
     node.parent_id = parent.node.id
     node = get_joplin().put(node)
+    if node is not None:
+        line = vim.Function('line')('.')
+        refresh(parent)
+        refresh(treenode.parent)
+        render()
+        vim.Function('cursor')(line, 1)
+
+
+def cmd_cp(treenode):
+    if treenode.is_folder():
+        print('Joplin: can not copy a notebook')
+        return
+
+    default_path = tree.node_path(treenode)
+    prompt1 = ''
+    prompt2 = 'Copy %s to: ' % treenode.node.title
+    path = input_path(prompt1, prompt2, default_path)
+    origin_path = path
+    if path == '':
+        print('Joplin: please select a notebook')
+        return ''
+
+    input_is_folder = path.endswith('/')
+    if input_is_folder:
+        path = path[:-1]
+
+    folders = path.split('/')
+    last_item = ''
+    if not input_is_folder:
+        last_item = folders[-1]
+        folders = folders[:-1]
+
+    parent = find_folder_by_path(root_treenodes(), folders)
+    if parent is None or not parent.is_folder():
+        vim.command('echo "Joplin: not such notebook<%s>"' % origin_path)
+        return
+    if not input_is_folder:
+        find = list(
+            filter(
+                lambda node: node.is_folder() and node.node.title == last_item,
+                parent.children))
+        if len(find) > 0:
+            parent = find[0]
+            input_is_folder = True
+            last_item = ''
+
+    new_title = last_item if last_item != '' else treenode.node.title
+    note = get_joplin().get(NoteNode, treenode.node.id)
+    new_note = NoteNode(**note.dict())
+    new_note.parent_id = parent.node.id
+    new_note.title = new_title
+    new_note.id = ''
+    new_note.created_time = 0
+    new_note.updated_time = 0
+    node = get_joplin().post(new_note)
     if node is not None:
         line = vim.Function('line')('.')
         refresh(parent)
@@ -673,34 +718,6 @@ def cmd_dd(treenode):
             vim.command('redraw!')
             vim.command('echo "Joplin: delete aborted"')
             break
-
-
-def cmd_node_cp(treenode, **kwargs):
-    if 'path' not in kwargs:
-        return
-    if treenode.is_folder():
-        print('Joplin: can not copy a notebook')
-        return
-    path = kwargs['path']
-    folders = path.split('/')
-    parent = find_folder_by_path(root_treenodes(), folders)
-    if parent is None or not parent.is_folder():
-        print('Joplin: not such folder<%s>' % '/'.join(folders))
-        return
-
-    note = get_joplin().get(NoteNode, treenode.node.id)
-    new_note = NoteNode(**note.dict())
-    new_note.parent_id = parent.node.id
-    new_note.id = ''
-    new_note.created_time = 0
-    new_note.updated_time = 0
-    node = get_joplin().post(new_note)
-    if node is not None:
-        line = vim.Function('line')('.')
-        refresh(parent)
-        refresh(treenode.parent)
-        render()
-        vim.Function('cursor')(line, 1)
 
 
 # ============================== note cmds
@@ -947,7 +964,6 @@ def find_folder_by_path(root_nodes, path):
             filter(lambda node: node.node.title == p and node.is_folder(),
                    root.children))
         if len(match) == 0:
-            print('not match')
             return None
         root = match[0]
 
@@ -956,11 +972,10 @@ def find_folder_by_path(root_nodes, path):
 
 def input_path(prompt1, prompt2, default_path):
     cmdheight_saved = vim.options['cmdheight']
-    if cmdheight_saved < 3:
-        vim.options['cmdheight'] = 3
+    newcmdheight = 3 if prompt1 != '' else 2
+    if cmdheight_saved < newcmdheight:
+        vim.options['cmdheight'] = newcmdheight
     vim.command('redraw!')
-    # vim.command('echo "Enter the notebook/note name to be created. '
-    #             'Notebook end with a \'/\'"')
     vim.command('echo "%s"' % prompt1)
     vim.command('echo " "')
     path = vim.Function('input')(

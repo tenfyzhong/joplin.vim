@@ -116,8 +116,8 @@ treenode_mapping = {
     '<C-j>': 'cmd_ctrl_j',
     '<C-k>': 'cmd_ctrl_k',
     'dd': 'cmd_dd',
-    # 'c': 'cmd_c',
     'mv': 'cmd_mv',
+    'cp': 'cmd_cp',
 }
 
 win_mapping = {
