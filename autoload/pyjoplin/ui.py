@@ -84,6 +84,8 @@ def set_command():
         'command! -buffer -complete=custom,joplin#joplin_folder_complete '
         '-nargs=1 JoplinNodeMoveTo python3 '
         'pyjoplin.treenode_cmd("cmd_node_mv", path=<q-args>)')
+    vim.command('command! -buffer -nargs=0 JoplinNodeDelete python3 '
+                'pyjoplin.treenode_cmd("cmd_dd")')
 
 
 def open_window():
