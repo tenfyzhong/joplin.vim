@@ -72,44 +72,60 @@ class TreeNode(object):
         """
         if not self.is_folder():
             return
-        # remove notes
+        # update folders
         tree_folders = list(
             filter(lambda node: node.is_folder(), self.children))
+        svr_folders = joplin.get_all(FolderNode)
+        self_svr_folders = list(
+            filter(lambda folder: folder.parent_id == self.node.id,
+                   svr_folders))
+        self_folders_id = set([node.id for node in self_svr_folders])
+        tree_folders = list(
+            filter(lambda node: node.node.id in self_folders_id, tree_folders))
+        cur_folder_ids = set([folder.node.id for folder in tree_folders])
+
+        new_fodlers = list(
+            filter(lambda node: node.id not in cur_folder_ids,
+                   self_svr_folders))
+        new_folder_nodes = list([TreeNode(folder) for folder in new_fodlers])
+        tree_folders += new_folder_nodes
+
         tree_folders = sorted(tree_folders,
                               key=attrgetter('node.' + folder_order_by),
                               reverse=folder_order_desc)
-        todo_notes = joplin.get_folder_notes(self.node.id)
-        if hide_completed:
-            todo_notes = list(
-                filter(
-                    lambda node: not node.node.is_todo or not node.
-                    todo_completed, todo_notes))
-        if pin_todo:
-            todos = []
-            notes = []
-            for node in todo_notes:
-                if node.is_todo and not node.todo_completed:
-                    todos.append(node)
-                else:
-                    notes.append(node)
-            todos = sorted(todos,
-                           key=attrgetter(note_order_by),
-                           reverse=note_order_desc)
-            notes = sorted(notes,
-                           key=attrgetter(note_order_by),
-                           reverse=note_order_desc)
-            todo_notes = todos + notes
-        else:
-            todo_notes = sorted(todo_notes,
-                                key=attrgetter(note_order_by),
-                                reverse=note_order_desc)
-        tree_notes = list([TreeNode(note) for note in todo_notes])
-        for note in tree_notes:
-            note.parent = self
-        self.children = tree_folders + tree_notes
+        self.children = tree_folders
+        if self.node.id != '':
+            todo_notes = joplin.get_folder_notes(self.node.id)
+            if hide_completed:
+                todo_notes = list(
+                    filter(
+                        lambda node: not node.node.is_todo or not node.
+                        todo_completed, todo_notes))
+            if pin_todo:
+                todos = []
+                notes = []
+                for node in todo_notes:
+                    if node.is_todo and not node.todo_completed:
+                        todos.append(node)
+                    else:
+                        notes.append(node)
+                todos = sorted(todos,
+                               key=attrgetter(note_order_by),
+                               reverse=note_order_desc)
+                notes = sorted(notes,
+                               key=attrgetter(note_order_by),
+                               reverse=note_order_desc)
+                todo_notes = todos + notes
+            else:
+                todo_notes = sorted(todo_notes,
+                                    key=attrgetter(note_order_by),
+                                    reverse=note_order_desc)
+            tree_notes = list([TreeNode(note) for note in todo_notes])
+            self.children += tree_notes
         self.fetched = True
         self.dirty = False
         for i, node in enumerate(self.children):
+            node.parent = self
             node.child_index_of_parent = i
 
     def prop_type(self):

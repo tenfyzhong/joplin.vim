@@ -556,6 +556,10 @@ def cmd_a(**kwargs):
     items = path.split('/')
     new_name = items[-1]
     folders = items[:-1]
+    if not is_folder and len(folders):
+        print('Joplin: a note should add to a notebook')
+        return
+
     parent = find_folder_by_path(folders)
     if parent is None:
         print('Joplin: not such folder<%s>' % '/'.join(folders))
