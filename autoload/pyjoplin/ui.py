@@ -68,6 +68,7 @@ def set_map():
 
     vim.command('nnoremap <script><buffer>a <esc>:<c-u>JoplinNodeAdd ')
     vim.command('nnoremap <script><buffer>cp <esc>:<c-u>JoplinNodeCp ')
+    vim.command('nnoremap <script><buffer>mv <esc>:<c-u>JoplinNodeMv ')
 
 
 def set_command():
@@ -82,7 +83,7 @@ def set_command():
     vim.command(
         'command! -buffer -complete=custom,joplin#joplin_folder_complete '
         '-nargs=1 JoplinNodeMv python3 '
-        'pyjoplin.treenode_cmd("cmd_m", path=<q-args>)')
+        'pyjoplin.treenode_cmd("cmd_node_mv", path=<q-args>)')
 
 
 def open_window():
@@ -678,12 +679,33 @@ def cmd_node_cp(treenode, **kwargs):
     node = get_joplin().post(new_note)
     if node is not None:
         line = vim.Function('line')('.')
-        refresh_render(parent)
+        refresh(parent)
+        refresh(treenode.parent)
+        render()
         vim.Function('cursor')(line, 1)
 
 
-def cmd_m(treenode, **kwargs):
-    pass
+def cmd_node_mv(treenode, **kwargs):
+    if 'path' not in kwargs:
+        return
+    path = kwargs['path']
+    folders = path.split('/')
+    parent = find_folder_by_path(root_treenodes(), folders)
+    if parent is None or not parent.is_folder():
+        print('Joplin: not such folder<%s>' % '/'.join(folders))
+        return
+
+    node = get_joplin().get(FolderNode, treenode.node.id) \
+        if treenode.is_folder() \
+        else get_joplin().get(NoteNode, treenode.node.id)
+    node.parent_id = parent.node.id
+    node = get_joplin().put(node)
+    if node is not None:
+        line = vim.Function('line')('.')
+        refresh(parent)
+        refresh(treenode.parent)
+        render()
+        vim.Function('cursor')(line, 1)
 
 
 # ============================== note cmds
@@ -922,6 +944,7 @@ def strftime(timestamp):
 
 
 def find_folder_by_path(root_nodes, path):
+    path = filter(lambda p: p != '', path)
     root = TreeNode()
     root.children = root_nodes
     for p in path:
