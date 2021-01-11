@@ -54,14 +54,14 @@ def set_options():
 
 def set_map():
     for lhs in variable.unmap:
-        cmd = 'nnoremap <script><buffer>%s <nop>' % lhs
+        cmd = 'nnoremap <script><silent><buffer>%s <nop>' % lhs
         vim.command(cmd)
     for lhs, rhs in variable.treenode_mapping.items():
-        cmd = 'nnoremap <script><buffer>%s <esc>:<c-u>python3 ' \
+        cmd = 'nnoremap <script><silent><buffer>%s <esc>:<c-u>python3 ' \
                 'pyjoplin.treenode_cmd("%s")<cr>' % (lhs, rhs)
         vim.command(cmd)
     for lhs, rhs in variable.win_mapping.items():
-        cmd = 'nnoremap <script><buffer>%s <esc>:<c-u>python3 ' \
+        cmd = 'nnoremap <script><silent><buffer>%s <esc>:<c-u>python3 ' \
                 'pyjoplin.run("%s")<cr>' % (lhs, rhs)
         vim.command(cmd)
 
@@ -109,7 +109,7 @@ def write(note_id, **kwargs):
 
 def saveas(**kwargs):
     if 'path' not in kwargs:
-        print('Joplin: please enter a name')
+        vim.command('echo "Joplin: please enter a name"')
         return
     path = kwargs['path']
     new_title = vim.Function('expand')('%:p:t').decode()
@@ -119,7 +119,7 @@ def saveas(**kwargs):
     note.body = body
     note = new_note_on_path(note, path)
     if note is None:
-        print('Joplin: New note failed')
+        vim.command('echo "Joplin: New note failed"')
         return
     note_local_setting()
     vim.current.buffer.vars['joplin_note_id'] = note.id
@@ -475,7 +475,7 @@ def cmd_r(treenode):
         treenode = treenode.parent
     refresh_render(treenode)
     cursor(lastnode)
-    print('Joplin: Refreshed!')
+    vim.command('echo "Joplin: Refreshed!"')
 
 
 def cmd_R(treenode):
@@ -484,7 +484,7 @@ def cmd_R(treenode):
         treenode = treenode.parent
     refresh_render(treenode)
     cursor(lastnode)
-    print('Joplin: Refreshed!')
+    vim.command('echo "Joplin: Refreshed!"')
 
 
 def cmd_P(treenode):
@@ -544,7 +544,7 @@ def cmd_a(**kwargs):
         "Notebook end with a '/'"
     path = input_path(prompt, 'Path: ', default_path)
     if path == '':
-        print('Joplin: please enter a new name')
+        vim.command('echo "Joplin: please enter a new name"')
         return
 
     is_folder = False
@@ -556,12 +556,12 @@ def cmd_a(**kwargs):
     new_name = items[-1]
     folders = items[:-1]
     if not is_folder and len(folders) == 0:
-        print('Joplin: a note should add to a notebook')
+        vim.command('echo "Joplin: a note should add to a notebook"')
         return
 
     parent = find_folder_by_path(folders)
     if parent is None:
-        print('Joplin: not such folder<%s>' % '/'.join(folders))
+        vim.command('echo "Joplin: not such folder<%s>"' % '/'.join(folders))
         return
 
     new_node = FolderNode(parent_id=parent.node.id,
@@ -581,17 +581,17 @@ def cmd_mv(treenode):
     prompt2 = 'Move %s to: ' % treenode.node.title
     path = input_path(prompt1, prompt2, default_path)
     # if path == '':
-    #     print('Joplin: please select a notebook')
+    #     vim.command('echo "Joplin: please select a notebook"')
     #     return
 
     folders = path.split('/')
     parent = find_folder_by_path(folders)
     if parent is None or not parent.is_folder():
-        print('Joplin: not such folder<%s>' % path)
+        vim.command('echo "Joplin: not such folder<%s>"' % path)
         return
 
     if parent.node.id == '' and not treenode.is_folder():
-        print('Joplin: note should mv to a notebook')
+        vim.command('echo "Joplin: note should mv to a notebook"')
         return
 
     if parent.node.id == treenode.parent.node.id:
@@ -612,7 +612,7 @@ def cmd_mv(treenode):
 
 def cmd_cp(treenode):
     if treenode.is_folder():
-        print('Joplin: can not copy a notebook')
+        vim.command('echo "Joplin: can not copy a notebook"')
         return
 
     default_path = tree.node_path(treenode)
@@ -683,7 +683,7 @@ class NoteInfo(object):
 def cmd_note_info(note_id, **kwargs):
     note = get_joplin().get(NoteNode, note_id, ['body'])
     if note is None:
-        print('Joplin: not such node <%s>' % note_id)
+        vim.command('echo "Joplin: not such node <%s>"' % note_id)
         return
     title = ' Information for %s ' % note.title
     path = get_joplin().node_path(note)
@@ -768,7 +768,7 @@ def cmd_note_type_convert(note_id, **kwargs):
 def cmd_note_complete_convert(note_id, **kwargs):
     note = get_joplin().get(NoteNode, note_id)
     if not note.is_todo:
-        print('Joplin: not a todo')
+        vim.command('echo "Joplin: not a todo"')
         return
     note.todo_completed ^= 1
     get_joplin().put(note)
@@ -785,27 +785,27 @@ def cmd_resource_attach(note_id, **kwargs):
     resource = ResourceNode(title=title)
     resource = get_joplin().post_resource(filepath, resource)
     if resource.id == '':
-        print('Joplin: attach resource failed')
+        vim.command('echo "Joplin: attach resource failed"')
         return
     insert_resource(resource)
 
 
 def cmd_link_resource(note_id, **kwargs):
     if 'title' not in kwargs:
-        print('Joplin: please select a resource')
+        vim.command('echo "Joplin: please select a resource"')
         return
     title = kwargs['title']
     resources = get_joplin().get_all(ResourceNode)
     matched = list(filter(lambda resource: resource.title == title, resources))
     if len(matched) == 0:
-        print('Joplin: not such resource <%s>' % title)
+        vim.command('echo "Joplin: not such resource <%s>"' % title)
         return
     insert_resource(matched[0])
 
 
 def cmd_link_note(note_id, **kwargs):
     if 'title' not in kwargs:
-        print('Joplin: please select a note')
+        vim.command('echo "Joplin: please select a note"')
         return
     title = kwargs['title']
     path = title.split('/')
@@ -938,7 +938,7 @@ def input_path(prompt1, prompt2, default_path):
 def new_note_on_path(note, path):
     origin_path = path
     if path == '':
-        print('Joplin: please enter a name')
+        vim.command('echo "Joplin: please enter a name"')
         return None
 
     input_is_folder = path.endswith('/')

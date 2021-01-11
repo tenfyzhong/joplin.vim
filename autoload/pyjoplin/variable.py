@@ -11,15 +11,15 @@ def get_joplin():
     global _j
     if _j is None:
         if options.token == '':
-            print('Joplin: g:joplin_token is empty')
+            vim.command('echo "Joplin: g:joplin_token is empty"')
             return None
 
         j = joplin.Joplin(options.token, options.host, options.port)
         if j is None:
-            print('Joplin: can not create joplin instance')
+            vim.command('echo "Joplin: can not create joplin instance"')
             return None
         if not j.ping():
-            print('Joplin: can not create joplin instance')
+            vim.command('echo "Joplin: can not create joplin instance"')
             return None
 
         _j = j
