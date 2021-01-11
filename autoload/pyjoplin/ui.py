@@ -540,7 +540,6 @@ def cmd_a(**kwargs):
 
     # if treenode is None, then add to root
     default_path = '' if treenode is None else tree.node_path(treenode)
-    default_path += '/'
     prompt = "Enter the notebook/note name to be created. "\
         "Notebook end with a '/'"
     path = input_path(prompt, 'Path: ', default_path)
@@ -556,7 +555,7 @@ def cmd_a(**kwargs):
     items = path.split('/')
     new_name = items[-1]
     folders = items[:-1]
-    if not is_folder and len(folders):
+    if not is_folder and len(folders) == 0:
         print('Joplin: a note should add to a notebook')
         return
 
@@ -578,18 +577,24 @@ def cmd_a(**kwargs):
 def cmd_mv(treenode):
     default_path = '' if treenode.parent is None else tree.node_path(
         treenode.parent)
-    default_path += '/'
     prompt1 = ''
     prompt2 = 'Move %s to: ' % treenode.node.title
     path = input_path(prompt1, prompt2, default_path)
-    if path == '':
-        print('Joplin: please select a notebook')
-        return
+    # if path == '':
+    #     print('Joplin: please select a notebook')
+    #     return
 
     folders = path.split('/')
     parent = find_folder_by_path(folders)
     if parent is None or not parent.is_folder():
         print('Joplin: not such folder<%s>' % path)
+        return
+
+    if parent.node.id == '' and not treenode.is_folder():
+        print('Joplin: note should mv to a notebook')
+        return
+
+    if parent.node.id == treenode.parent.node.id:
         return
 
     node = get_joplin().get(FolderNode, treenode.node.id) \
@@ -924,6 +929,7 @@ def input_path(prompt1, prompt2, default_path):
     path = vim.Function('input')(
         prompt2, default_path,
         'custom,joplin#joplin_folder_complete').decode()
+    path = path.strip()
     vim.command('redraw!')
     vim.options['cmdheight'] = cmdheight_saved
     return path
