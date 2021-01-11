@@ -349,7 +349,7 @@ class Joplin(object):
             print('Joplin: joplin.app error')
 
     def node_path(self, node):
-        if node is not None and node.type_ not in [1, 2]:
+        if node is None or node.type_ not in [1, 2]:
             return ''
 
         path = [node.title]
