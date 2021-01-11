@@ -66,9 +66,7 @@ def set_map():
                 'pyjoplin.run("%s")<cr>' % (lhs, rhs)
         vim.command(cmd)
 
-    # vim.command('nnoremap <script><buffer>a <esc>:<c-u>JoplinNodeAdd ')
     vim.command('nnoremap <script><buffer>cp <esc>:<c-u>JoplinNodeCopyTo ')
-    vim.command('nnoremap <script><buffer>mv <esc>:<c-u>JoplinNodeMoveTo ')
 
 
 def set_command():
@@ -76,10 +74,6 @@ def set_command():
         'command! -buffer -complete=custom,joplin#joplin_folder_complete '
         '-nargs=1 JoplinNodeCopyTo python3 '
         'pyjoplin.treenode_cmd("cmd_node_cp", path=<q-args>)')
-    vim.command(
-        'command! -buffer -complete=custom,joplin#joplin_folder_complete '
-        '-nargs=1 JoplinNodeMoveTo python3 '
-        'pyjoplin.treenode_cmd("cmd_node_mv", path=<q-args>)')
     vim.command('command! -buffer -nargs=0 JoplinNodeDelete python3 '
                 'pyjoplin.treenode_cmd("cmd_dd")')
 
@@ -587,18 +581,9 @@ def cmd_a(**kwargs):
     # if treenode is None, then add to root
     default_path = '' if treenode is None else tree.node_path(treenode)
     default_path += '/'
-
-    cmdheight_saved = vim.options['cmdheight']
-    if cmdheight_saved < 3:
-        vim.options['cmdheight'] = 3
-    vim.command('redraw!')
-    vim.command('echo "Enter the notebook/note name to be created. '
-                'Notebook end with a \'/\'"')
-    vim.command('echo " "')
-    path = vim.Function('input')(
-        '', default_path, 'custom,joplin#joplin_folder_complete').decode()
-    vim.command('redraw!')
-    vim.options['cmdheight'] = cmdheight_saved
+    prompt = "Enter the notebook/note name to be created. "\
+        "Notebook end with a '/'"
+    path = input_path(prompt, 'Path: ', default_path)
     if path == '':
         return
 
@@ -622,6 +607,35 @@ def cmd_a(**kwargs):
     if node is not None:
         line = vim.Function('line')('.')
         refresh_render(parent)
+        vim.Function('cursor')(line, 1)
+
+
+def cmd_mv(treenode):
+    default_path = '' if treenode.parent is None else tree.node_path(
+        treenode.parent)
+    default_path += '/'
+    prompt1 = ''
+    prompt2 = 'Move %s to: ' % treenode.node.title
+    path = input_path(prompt1, prompt2, default_path)
+    if path == '':
+        return
+
+    folders = path.split('/')
+    parent = find_folder_by_path(root_treenodes(), folders)
+    if parent is None or not parent.is_folder():
+        print('Joplin: not such folder<%s>' % path)
+        return
+
+    node = get_joplin().get(FolderNode, treenode.node.id) \
+        if treenode.is_folder() \
+        else get_joplin().get(NoteNode, treenode.node.id)
+    node.parent_id = parent.node.id
+    node = get_joplin().put(node)
+    if node is not None:
+        line = vim.Function('line')('.')
+        refresh(parent)
+        refresh(treenode.parent)
+        render()
         vim.Function('cursor')(line, 1)
 
 
@@ -681,29 +695,6 @@ def cmd_node_cp(treenode, **kwargs):
     new_note.created_time = 0
     new_note.updated_time = 0
     node = get_joplin().post(new_note)
-    if node is not None:
-        line = vim.Function('line')('.')
-        refresh(parent)
-        refresh(treenode.parent)
-        render()
-        vim.Function('cursor')(line, 1)
-
-
-def cmd_node_mv(treenode, **kwargs):
-    if 'path' not in kwargs:
-        return
-    path = kwargs['path']
-    folders = path.split('/')
-    parent = find_folder_by_path(root_treenodes(), folders)
-    if parent is None or not parent.is_folder():
-        print('Joplin: not such folder<%s>' % '/'.join(folders))
-        return
-
-    node = get_joplin().get(FolderNode, treenode.node.id) \
-        if treenode.is_folder() \
-        else get_joplin().get(NoteNode, treenode.node.id)
-    node.parent_id = parent.node.id
-    node = get_joplin().put(node)
     if node is not None:
         line = vim.Function('line')('.')
         refresh(parent)
@@ -961,3 +952,20 @@ def find_folder_by_path(root_nodes, path):
         root = match[0]
 
     return root if root.node is not None else None
+
+
+def input_path(prompt1, prompt2, default_path):
+    cmdheight_saved = vim.options['cmdheight']
+    if cmdheight_saved < 3:
+        vim.options['cmdheight'] = 3
+    vim.command('redraw!')
+    # vim.command('echo "Enter the notebook/note name to be created. '
+    #             'Notebook end with a \'/\'"')
+    vim.command('echo "%s"' % prompt1)
+    vim.command('echo " "')
+    path = vim.Function('input')(
+        prompt2, default_path,
+        'custom,joplin#joplin_folder_complete').decode()
+    vim.command('redraw!')
+    vim.options['cmdheight'] = cmdheight_saved
+    return path
