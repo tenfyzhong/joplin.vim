@@ -20,10 +20,10 @@ class TreeNode(object):
         self.child_index_of_parent = -1
 
     def __str__(self):
-        return str(self.node)
+        return '%d:%d:%s' % (len(self.children), self.lineno, str(self.node))
 
     def __repr__(self):
-        return str(self.node)
+        return '%d:%d:%s' % (len(self.children), self.lineno, str(self.node))
 
     def text(self, iconopen, iconclose, iconnote, icontodo, iconcompleted):
         sign = ''
@@ -121,6 +121,32 @@ class TreeNode(object):
                 'joplin_todo'
         else:
             return ''
+
+
+def construct_root(joplin, order_by, order_desc=False):
+    """construct_root of all
+    :returns: TreeNode
+    """
+    # folders
+    folders = joplin.get_all(FolderNode)
+    folders = sorted(folders, key=attrgetter(order_by), reverse=order_desc)
+    nodes = list([TreeNode(folder) for folder in folders])
+    d = dict({node.node.id: node for node in nodes})
+    for node in nodes:
+        if node.node.parent_id != '':
+            parent = d[node.node.parent_id]
+            node.parent = parent
+            node.parent.children.append(node)
+
+    root = TreeNode(FolderNode())
+    nodes = list([node for node in nodes if node.parent is None])
+    for i, node in enumerate(nodes):
+        node.child_index_of_parent = i
+        node.parent_id = root
+    root.children = nodes
+    root._open = True
+    root.fetched = True
+    return root
 
 
 def construct_folder_tree(joplin, order_by, order_desc=False):

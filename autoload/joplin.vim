@@ -22,7 +22,7 @@ function! joplin#toggle() abort
 endfunction
 
 function! joplin#save_as(folder) abort
-  exec printf("python3 pyjoplin.run('saveas', folder='%s')", a:folder)
+  exec printf("python3 pyjoplin.run('saveas', path='%s')", a:folder)
 endfunction
 
 function! joplin#joplin_folder_complete(A, L, P) abort

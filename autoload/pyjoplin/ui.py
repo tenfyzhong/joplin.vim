@@ -9,8 +9,7 @@ import vim
 
 from . import options, tree, variable
 from .node import FolderNode, NoteNode, ResourceNode, TagNode
-from .tree import TreeNode
-from .variable import bufname, get_joplin, root_treenodes
+from .variable import bufname, get_joplin
 
 props = {
     'joplin_folder': 'Identifier',
@@ -109,21 +108,16 @@ def write(note_id, **kwargs):
 
 
 def saveas(**kwargs):
-    if 'folder' not in kwargs:
-        print('Joplin: please select a notebook')
+    if 'path' not in kwargs:
+        print('Joplin: please enter a name')
         return
-    folder = kwargs['folder']
-    path = folder.split('/')
-    parent = find_folder_by_path(root_treenodes(), path)
-    if parent is None:
-        print('Joplin: not such notebook<%s>' % folder)
-        return
-
-    note = NoteNode(parent_id=parent.node.id)
+    path = kwargs['path']
+    new_title = vim.Function('expand')('%:p:t').decode()
+    note = NoteNode()
     body = '\n'.join(vim.current.buffer[:])
-    note.title = vim.Function('expand')('%:p:t').decode()
+    note.title = new_title
     note.body = body
-    note = get_joplin().post(note)
+    note = new_note_on_path(note, path)
     if note is None:
         print('Joplin: New note failed')
         return
@@ -171,20 +165,22 @@ def render_title(nr):
     return nr
 
 
-def note_text(nodes, indent):
-    lines = []
-    for node in nodes:
-        node.indent = indent
-        lines.append(node)
-        if node.is_open():
-            sub = note_text(node.children, indent + 1)
+def tree_line(node, indent):
+    lines = [node] if node.node.id != '' else []
+    node.indent = indent
+    if node.is_open():
+        for node in node.children:
+            sub = tree_line(node, indent + 1)
             lines += sub
     return lines
 
 
 def render_nodes(nr):
-    treenodes = root_treenodes()
-    lines = note_text(treenodes, 0)
+    root = variable.get_root()
+    if root is None:
+        return nr
+
+    lines = tree_line(root, -1)
     for line in lines:
         vim.current.buffer.append(
             line.text(options.icon_open, options.icon_close, options.icon_note,
@@ -193,6 +189,7 @@ def render_nodes(nr):
         prop_type = line.prop_type()
         prop_add(nr + 1, prop_type)
         nr += 1
+
     return nr
 
 
@@ -344,25 +341,15 @@ def note_match_text(**kwargs):
     var = kwargs['var']
     vim.current.buffer.vars[var] = ''
     path = arg_lead.split(r'/')
-    path = list(filter(lambda p: re.match(r'^\s*$', p) is None, path[:-1]))
-    dirname = '/'.join(path)
-    nodes = root_treenodes()
-    for p in path:
-        nodes = list(
-            filter(lambda node: node.is_folder() and node.node.title == p,
-                   nodes))
-        if len(nodes) == 0:
-            return
-        nodes = nodes[0].children
-
-    if len(nodes) == 0:
+    path = path[:-1]
+    root = find_folder_by_path(path)
+    if root is None:
         return
-    for node in nodes:
-        node.fetch_folder(get_joplin(), options.pin_todo,
-                          options.hide_completed, options.folder_order_by,
-                          options.folder_order_desc, options.note_order_by,
-                          options.note_order_desc)
-    lines = list([dirname + '/' + node.node.title for node in nodes])
+    root.fetch_folder(get_joplin(), options.pin_todo, options.hide_completed,
+                      options.folder_order_by, options.folder_order_desc,
+                      options.note_order_by, options.note_order_desc)
+    dirname = tree.node_path(root)
+    lines = list([dirname + '/' + node.node.title for node in root.children])
     lines = list(
         map(lambda line: line[1:] if line.startswith('/') else line, lines))
     text = '\n'.join(lines)
@@ -376,27 +363,22 @@ def folder_match_text(**kwargs):
     var = kwargs['var']
     vim.current.buffer.vars[var] = ''
     path = arg_lead.split(r'/')
-    path = list(filter(lambda p: re.match(r'^\s*$', p) is None, path[:-1]))
-    dirname = '/'.join(path)
-    nodes = root_treenodes()
-    for p in path:
-        nodes = list(
-            filter(lambda node: node.is_folder() and node.node.title == p,
-                   nodes))
-        if len(nodes) == 0:
-            return
-        nodes = nodes[0].children
-
-    if len(nodes) == 0:
+    path = path[:-1]
+    root = find_folder_by_path(path)
+    if root is None:
         return
-    lines = list([dirname + '/' + node.node.title for node in nodes])
+    dirname = tree.node_path(root)
+    lines = list([
+        dirname + '/' + node.node.title for node in root.children
+        if node.is_folder()
+    ])
     lines = list(
         map(lambda line: line[1:] if line.startswith('/') else line, lines))
     text = '\n'.join(lines)
     vim.current.buffer.vars[var] = text
 
 
-def works2bvar(**kwargs):
+def words2bvar(**kwargs):
     if 'var' not in kwargs or 'wordsfunc' not in kwargs:
         return
     var = kwargs['var']
@@ -517,34 +499,24 @@ def cmd_p(treenode):
 
 
 def cmd_K(treenode):
-    nodes = treenode.parent.children if \
-        treenode.parent is not None else \
-        root_treenodes()
-    if len(nodes) > 0:
-        cursor(nodes[0])
+    if len(treenode.parent.children) > 0:
+        cursor(treenode.parent.children[0])
 
 
 def cmd_J(treenode):
-    nodes = treenode.parent.children if \
-        treenode.parent is not None else \
-        root_treenodes()
-    if len(nodes) > 0:
-        cursor(nodes[-1])
+    if len(treenode.parent.children) > 0:
+        cursor(treenode.parent.children[-1])
 
 
 def cmd_ctrl_j(treenode):
-    nodes = treenode.parent.children if \
-        treenode.parent is not None else \
-        root_treenodes()
+    nodes = treenode.parent.children
     i = treenode.child_index_of_parent + 1
     if i < len(nodes):
         cursor(nodes[i])
 
 
 def cmd_ctrl_k(treenode):
-    nodes = treenode.parent.children if \
-        treenode.parent is not None else \
-        root_treenodes()
+    nodes = treenode.parent.children
     i = treenode.child_index_of_parent - 1
     if i >= 0:
         cursor(nodes[i])
@@ -584,7 +556,7 @@ def cmd_a(**kwargs):
     items = path.split('/')
     new_name = items[-1]
     folders = items[:-1]
-    parent = find_folder_by_path(root_treenodes(), folders)
+    parent = find_folder_by_path(folders)
     if parent is None:
         print('Joplin: not such folder<%s>' % '/'.join(folders))
         return
@@ -611,7 +583,7 @@ def cmd_mv(treenode):
         return
 
     folders = path.split('/')
-    parent = find_folder_by_path(root_treenodes(), folders)
+    parent = find_folder_by_path(folders)
     if parent is None or not parent.is_folder():
         print('Joplin: not such folder<%s>' % path)
         return
@@ -638,47 +610,15 @@ def cmd_cp(treenode):
     prompt1 = ''
     prompt2 = 'Copy %s to: ' % treenode.node.title
     path = input_path(prompt1, prompt2, default_path)
-    origin_path = path
-    if path == '':
-        print('Joplin: please select a notebook')
-        return ''
-
-    input_is_folder = path.endswith('/')
-    if input_is_folder:
-        path = path[:-1]
-
-    folders = path.split('/')
-    last_item = ''
-    if not input_is_folder:
-        last_item = folders[-1]
-        folders = folders[:-1]
-
-    parent = find_folder_by_path(root_treenodes(), folders)
-    if parent is None or not parent.is_folder():
-        vim.command('echo "Joplin: not such notebook<%s>"' % origin_path)
-        return
-    if not input_is_folder:
-        find = list(
-            filter(
-                lambda node: node.is_folder() and node.node.title == last_item,
-                parent.children))
-        if len(find) > 0:
-            parent = find[0]
-            input_is_folder = True
-            last_item = ''
-
-    new_title = last_item if last_item != '' else treenode.node.title
     note = get_joplin().get(NoteNode, treenode.node.id)
     new_note = NoteNode(**note.dict())
-    new_note.parent_id = parent.node.id
-    new_note.title = new_title
+    new_note.title = treenode.node.title
     new_note.id = ''
     new_note.created_time = 0
     new_note.updated_time = 0
-    node = get_joplin().post(new_note)
+    node = new_note_on_path(note, path)
     if node is not None:
         line = vim.Function('line')('.')
-        refresh(parent)
         refresh(treenode.parent)
         render()
         vim.Function('cursor')(line, 1)
@@ -860,16 +800,9 @@ def cmd_link_note(note_id, **kwargs):
         return
     title = kwargs['title']
     path = title.split('/')
-    root = TreeNode()
-    root.children = root_treenodes()
-    for p in path:
-        match = list(filter(lambda node: node.node.title == p, root.children))
-        if len(match) == 0:
-            print('Joplin: not such note <%s>' % title)
-            return
-        root = match[0]
-    if root.node is None:
-        print('Joplin: not such note <%s>' % title)
+    root = find_node_by_path(path)
+    if root is None:
+        vim.command('echo "Joplin: not such note: %s"' % title)
         return
     vim.command('normal! a' + root.node.markdown_link())
 
@@ -880,16 +813,17 @@ def insert_resource(resource):
     vim.command('normal! a' + text)
 
 
-def find_treenode(nodes, lineno):
-    nodes = list(filter(lambda node: node.lineno > 0, nodes))
+def find_treenode(root, lineno):
+    nodes = list(filter(lambda node: node.lineno > 0, root.children))
     i = 0
     j = len(nodes) - 1
 
     if i > j:
         return None
     if nodes[j].lineno < lineno:
-        return find_treenode(nodes[j].children,
-                             lineno) if nodes[j].is_folder() else None
+        return find_treenode(nodes[j], lineno) if \
+            nodes[j].is_folder() else \
+            None
     while i <= j:
         mid = int((i + j) / 2)
         if nodes[mid].lineno == lineno:
@@ -900,8 +834,9 @@ def find_treenode(nodes, lineno):
             j = mid - 1
 
     mid = i if nodes[i].lineno < lineno else i - 1
-    return find_treenode(nodes[mid].children,
-                         lineno) if nodes[mid].is_folder() else None
+    return find_treenode(nodes[mid], lineno) if \
+        nodes[mid].is_folder() else \
+        None
 
 
 def base_line():
@@ -913,7 +848,7 @@ def get_cur_line():
     lineno = int(vim.eval('line(".")'))
     if lineno <= base_line():
         return None
-    return find_treenode(variable.root_treenodes(), lineno)
+    return find_treenode(variable.get_root(), lineno)
 
 
 def cursor(treenode):
@@ -929,7 +864,7 @@ def refresh_treenode_line(line):
     lazyredraw_saved = vim.options['lazyredraw']
     vim.options['lazyredraw'] = True
     vim.command('%dwincmd w' % winnr)
-    treenode = find_treenode(root_treenodes(), line)
+    treenode = find_treenode(variable.get_root(), line)
     if treenode is not None and not treenode.is_folder():
         treenode = treenode.parent
     refresh_render(treenode)
@@ -955,19 +890,23 @@ def strftime(timestamp):
                                   1000.0).strftime('%Y-%m-%d %H:%M:%S')
 
 
-def find_folder_by_path(root_nodes, path):
+def find_node_by_path(path):
     path = filter(lambda p: p != '', path)
-    root = TreeNode()
-    root.children = root_nodes
+    root = variable.get_root()
+    if root is None:
+        return
     for p in path:
-        match = list(
-            filter(lambda node: node.node.title == p and node.is_folder(),
-                   root.children))
+        match = list(filter(lambda node: node.node.title == p, root.children))
         if len(match) == 0:
             return None
         root = match[0]
 
     return root if root.node is not None else None
+
+
+def find_folder_by_path(path):
+    node = find_node_by_path(path)
+    return node if node is not None and node.is_folder() else None
 
 
 def input_path(prompt1, prompt2, default_path):
@@ -984,3 +923,45 @@ def input_path(prompt1, prompt2, default_path):
     vim.command('redraw!')
     vim.options['cmdheight'] = cmdheight_saved
     return path
+
+
+def new_note_on_path(note, path):
+    origin_path = path
+    if path == '':
+        print('Joplin: please enter a name')
+        return None
+
+    input_is_folder = path.endswith('/')
+    if input_is_folder:
+        path = path[:-1]
+
+    folders = path.split('/')
+    last_item = ''
+    if not input_is_folder:
+        last_item = folders[-1]
+        folders = folders[:-1]
+
+    parent = find_folder_by_path(folders)
+    if parent is None or not parent.is_folder():
+        vim.command('echo "Joplin: not such notebook<%s>"' % origin_path)
+        return None
+    if not input_is_folder:
+        find = list(
+            filter(
+                lambda node: node.is_folder() and node.node.title == last_item,
+                parent.children))
+        if len(find) > 0:
+            parent = find[0]
+            input_is_folder = True
+            last_item = ''
+
+    note.title = last_item if last_item != '' else note.title
+    note.parent_id = parent.node.id
+    note.id = ''
+    note = get_joplin().post(note)
+    if note is not None:
+        line = vim.Function('line')('.')
+        refresh(parent)
+        render()
+        vim.Function('cursor')(line, 1)
+    return note

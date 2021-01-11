@@ -4,7 +4,7 @@
 from . import joplin, options, tree
 
 _j = None
-_treenodes = None
+_root = None
 
 
 def get_joplin():
@@ -26,15 +26,16 @@ def get_joplin():
     return _j
 
 
-def root_treenodes():
-    global _treenodes
-    if _treenodes is None:
+def get_root():
+    global _root
+    if _root is None:
         j = get_joplin()
         if j is None:
-            return []
-        _treenodes = tree.construct_folder_tree(j, options.folder_order_by,
-                                                options.folder_order_desc)
-    return _treenodes
+            return None
+        _root = tree.construct_root(j, options.folder_order_by,
+                                    options.folder_order_desc)
+
+    return _root
 
 
 def delete_node_in_list(nodes, id):
@@ -44,9 +45,8 @@ def delete_node_in_list(nodes, id):
     return list(filter(lambda node: node.node.id != id, nodes))
 
 
-def del_rootnode(id):
-    global _treenodes
-    _treenodes = delete_node_in_list(_treenodes, id)
+def del_child(root, id):
+    root.children = delete_node_in_list(root.children, id)
 
 
 def bufname():
@@ -91,7 +91,10 @@ help_lines = [
     '# ',
     '# ' + (options.window_width - 2) * '-',
     '# Other mappings~',
-    '# m: show menu',
+    '# a: add node',
+    '# dd: delete a node',
+    '# cp: copy a node',
+    '# mv: move a node',
     '# q: Close the Joplin window',
     '# ?: toggle help',
     '',
