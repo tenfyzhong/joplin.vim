@@ -580,9 +580,6 @@ def cmd_mv(treenode):
     prompt1 = ''
     prompt2 = 'Move %s to: ' % treenode.node.title
     path = input_path(prompt1, prompt2, default_path)
-    # if path == '':
-    #     vim.command('echo "Joplin: please select a notebook"')
-    #     return
 
     folders = path.split('/')
     parent = find_folder_by_path(folders)
@@ -667,6 +664,14 @@ def cmd_dd(treenode):
             vim.command('redraw!')
             vim.command('echo "Joplin: delete aborted"')
             break
+
+
+def search(**kwargs):
+    if 'query' not in kwargs:
+        return
+    query = kwargs['query']
+    nodes = get_joplin().search(query)
+    print(nodes)
 
 
 # ============================== note cmds

@@ -47,6 +47,7 @@ command! -nargs=0 JoplinWinOpen call joplin#open()
 command! -nargs=0 JoplinWinClose call joplin#close()
 command! -nargs=0 Joplin call joplin#toggle()
 command! -nargs=1 -complete=custom,joplin#joplin_folder_complete JoplinSaveAs call joplin#save_as(<q-args>)
+command! -nargs=1 JoplinSearch call joplin#search(<q-args>)
 
 augroup joplin_init
   autocmd!

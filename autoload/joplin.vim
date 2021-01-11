@@ -25,6 +25,10 @@ function! joplin#save_as(folder) abort
   exec printf("python3 pyjoplin.run('saveas', path='%s')", a:folder)
 endfunction
 
+function! joplin#search(query) abort
+  exec printf("python3 pyjoplin.run('search', query='%s')", a:query)
+endfunction
+
 function! joplin#joplin_folder_complete(A, L, P) abort
   let var = 'folder_complete_word'
   exec printf("python3 pyjoplin.run('folder_match_text', arg_lead='%s', var='%s')", a:A, var)

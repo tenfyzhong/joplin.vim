@@ -55,9 +55,11 @@ class Joplin(object):
 
         # fetch all data with body
         # the body is to large and useless
-        fields = list(filter(lambda field: field != 'body', cls().fields()))
-        fields_str = ','.join(fields)
-        url += '&fields=' + fields_str
+        if cls != factory_node:
+            fields = list(filter(lambda field: field != 'body',
+                                 cls().fields()))
+            fields_str = ','.join(fields)
+            url += '&fields=' + fields_str
         json = {}
         try:
             r = requests.get(url)
