@@ -193,7 +193,7 @@ def node_path(node):
         return ''
     p = node
     path = []
-    while p is not None:
+    while p is not None and p.node is not None and p.node.title != '':
         path.append(p.node.title)
         p = p.parent
 
