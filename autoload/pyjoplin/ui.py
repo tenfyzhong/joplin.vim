@@ -67,8 +67,8 @@ def set_map():
         vim.command(cmd)
 
     vim.command('nnoremap <script><buffer>a <esc>:<c-u>JoplinNodeAdd ')
-    vim.command('nnoremap <script><buffer>cp <esc>:<c-u>JoplinNodeCp ')
-    vim.command('nnoremap <script><buffer>mv <esc>:<c-u>JoplinNodeMv ')
+    vim.command('nnoremap <script><buffer>cp <esc>:<c-u>JoplinNodeCopyTo ')
+    vim.command('nnoremap <script><buffer>mv <esc>:<c-u>JoplinNodeMoveTo ')
 
 
 def set_command():
@@ -78,11 +78,11 @@ def set_command():
         'pyjoplin.run("cmd_node_add", path=<q-args>)')
     vim.command(
         'command! -buffer -complete=custom,joplin#joplin_folder_complete '
-        '-nargs=1 JoplinNodeCp python3 '
+        '-nargs=1 JoplinNodeCopyTo python3 '
         'pyjoplin.treenode_cmd("cmd_node_cp", path=<q-args>)')
     vim.command(
         'command! -buffer -complete=custom,joplin#joplin_folder_complete '
-        '-nargs=1 JoplinNodeMv python3 '
+        '-nargs=1 JoplinNodeMoveTo python3 '
         'pyjoplin.treenode_cmd("cmd_node_mv", path=<q-args>)')
 
 
