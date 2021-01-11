@@ -147,12 +147,12 @@ def construct_folder_tree(joplin, order_by, order_desc=False):
 
 
 def node_path(node):
-    if node is None or node.node is None or node.node.type_ not in [1, 2]:
+    if node is None or node.node is None:
         return ''
     p = node
     path = []
     while p is not None:
-        path.append(p.Node.title)
+        path.append(p.node.title)
         p = p.parent
 
     path = reversed(path)

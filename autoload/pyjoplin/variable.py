@@ -121,7 +121,7 @@ treenode_mapping = {
 }
 
 win_mapping = {
-    # 'a': 'cmd_a',
+    'a': 'cmd_a',
     'q': 'cmd_q',
     '?': 'cmd_question_mark',
 }
