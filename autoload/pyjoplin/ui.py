@@ -478,7 +478,7 @@ def cmd_O(treenode):
 
 def cmd_x(treenode):
     parent = treenode.parent
-    if parent is None or not parent.is_open():
+    if parent is None or parent.node.id == '' or not parent.is_open():
         return
 
     parent.close()
