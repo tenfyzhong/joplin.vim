@@ -21,8 +21,8 @@ function! joplin#toggle() abort
   python3 pyjoplin.run('toggle_window')
 endfunction
 
-function! joplin#save_as(folder) abort
-  exec printf("python3 pyjoplin.run('saveas', path='%s')", a:folder)
+function! joplin#saveas(is_todo, folder) abort
+  exec printf("python3 pyjoplin.run('saveas', is_todo=%d, path='%s')", a:is_todo, a:folder)
 endfunction
 
 function! joplin#search(query) abort

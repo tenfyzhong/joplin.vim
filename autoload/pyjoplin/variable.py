@@ -121,10 +121,12 @@ treenode_mapping = {
     'dd': 'cmd_dd',
     'mv': 'cmd_mv',
     'cp': 'cmd_cp',
+    'an': 'cmd_an',
+    'at': 'cmd_at',
 }
 
 win_mapping = {
-    'a': 'cmd_a',
+    'ab': 'cmd_ab',
     'q': 'cmd_q',
     '?': 'cmd_question_mark',
 }
