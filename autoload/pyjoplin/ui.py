@@ -239,7 +239,7 @@ def edit_note(command, reopen_tree, note, joplin_treenode_line):
 
     vim.options['lazyredraw'] = lazyredraw_saved
     vim.options['undolevels'] = undolevel_saved
-    filename = get_joplin().node_path(note)
+    vim.Function('cursor')(1, 1)
     note_local_setting()
 
 
@@ -683,7 +683,11 @@ def cmd_dd(treenode):
             break
 
 
+_last_query = ''
+
+
 def search(**kwargs):
+    global _last_query
     if 'query' not in kwargs:
         return
     query = kwargs['query']
@@ -712,6 +716,7 @@ def search(**kwargs):
     if result == 0:
         size = len(nodes)
         vim.command('copen %d' % (size if size < 10 else 10))
+        _last_query = query
         vim.command('nnoremap <silent><buffer><cr> :python3 '
                     'pyjoplin.run("edit_cur_search")<cr>')
 
@@ -735,6 +740,8 @@ def edit_cur_search():
 
     edit_note('edit', False, note, 0)
     vim.Function('setqflist')([], 'a', {'idx': line})
+    if _last_query != '':
+        vim.command('/%s' % _last_query)
 
 
 # ============================== note cmds
