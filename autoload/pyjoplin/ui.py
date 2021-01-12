@@ -208,6 +208,8 @@ def render():
 def edit(command, treenode):
     lazyredraw_saved = vim.options['lazyredraw']
     winview_saved = vim.Function('winsaveview')()
+    undolevel_saved = vim.options['undolevels']
+    vim.options['undolevels'] = -1
     dirname = vim.eval('tempname()')
     os.mkdir(dirname)
     filename = dirname + '/' + treenode.node.title + '.md'
@@ -230,6 +232,7 @@ def edit(command, treenode):
 
     vim.command('redraw!')
     vim.options['lazyredraw'] = lazyredraw_saved
+    vim.options['undolevels'] = undolevel_saved
     note_local_setting()
 
 
