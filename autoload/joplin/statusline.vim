@@ -1,4 +1,4 @@
-function! joplin#statusline#joplin_markdown()
+function! joplin#statusline#note()
   let name = get(b:, 'joplin_path', '')
   if name == ''
     let name = bufname()
@@ -6,10 +6,11 @@ function! joplin#statusline#joplin_markdown()
   return name
 endfunction
 
-function! joplin#statusline#joplin_markdown_airline(...)
+function! joplin#statusline#airline(...)
   if &filetype == 'joplin.markdown'
-    let w:airline_section_c = '%{joplin#statusline#joplin_markdown()}%m'
-    let g:airline_variable_referenced_in_statusline = 'foo'
+    let w:airline_section_c = '%{joplin#statusline#note()}%m'
+  elseif &filetype == 'joplin'
+    let w:airline_section_c = ''
   endif
 endfunction
 
