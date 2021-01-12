@@ -433,23 +433,25 @@ def open_recusively(treenode):
 
 
 def cmd_O(treenode):
-    if treenode.is_folder():
+    if not treenode.is_folder():
+        return
+    if treenode.is_open():
+        close_recurisive(treenode)
+    else:
         open_recusively(treenode)
-        render()
-        cursor(treenode)
+
+    render()
+    cursor(treenode)
 
 
 def cmd_x(treenode):
-    treenode = treenode if \
-        treenode.is_folder() and treenode.is_open() else \
-        treenode.parent
-    while treenode is not None and not treenode.is_folder():
-        treenode = treenode.parent
+    parent = treenode.parent
+    if parent is None or not parent.is_open():
+        return
 
-    if treenode is not None:
-        treenode.close()
-        render()
-        cursor(treenode)
+    parent.close()
+    render()
+    cursor(parent)
 
 
 def close_recurisive(node):
