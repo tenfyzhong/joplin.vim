@@ -684,13 +684,13 @@ def cmd_dd(treenode):
             vim.command('redraw!')
             vim.command('echo "Joplin: <%s> deleted"' % treenode.node.title)
             line = vim.Function('line')('.')
-            if treenode.parent is None:
-                variable.del_rootnode(treenode.node.id)
-                render()
-            else:
-                treenode.parent.children = variable.delete_node_in_list(
-                    treenode.parent.children, treenode.node.id)
-                render()
+            # if treenode.parent is None:
+            #     variable.del_rootnode(treenode.node.id)
+            #     render()
+            # else:
+            treenode.parent.children = variable.delete_node_in_list(
+                treenode.parent.children, treenode.node.id)
+            render()
 
             vim.Function('cursor')(line, 1)
             break

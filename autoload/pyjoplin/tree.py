@@ -147,45 +147,22 @@ def construct_root(joplin, order_by, order_desc=False):
     folders = joplin.get_all(FolderNode)
     folders = sorted(folders, key=attrgetter(order_by), reverse=order_desc)
     nodes = list([TreeNode(folder) for folder in folders])
-    d = dict({node.node.id: node for node in nodes})
-    for node in nodes:
-        if node.node.parent_id != '':
-            parent = d[node.node.parent_id]
-            node.parent = parent
-            node.parent.children.append(node)
 
     root = TreeNode(FolderNode())
-    nodes = list([node for node in nodes if node.parent is None])
+    d = dict({node.node.id: node for node in nodes})
+    d[''] = root
+    for node in nodes:
+        parent = d[node.node.parent_id]
+        node.parent = parent
+        node.parent.children.append(node)
+
+    nodes = list([node for node in nodes if node.parent == root])
     for i, node in enumerate(nodes):
         node.child_index_of_parent = i
-        node.parent_id = root
     root.children = nodes
     root._open = True
     root.fetched = True
     return root
-
-
-def construct_folder_tree(joplin, order_by, order_desc=False):
-    """construct folder tree
-
-    :returns: TreeNodes
-
-    """
-    # folders
-    folders = joplin.get_all(FolderNode)
-    folders = sorted(folders, key=attrgetter(order_by), reverse=order_desc)
-    nodes = list([TreeNode(folder) for folder in folders])
-    d = dict({node.node.id: node for node in nodes})
-    for node in nodes:
-        if node.node.parent_id != '':
-            parent = d[node.node.parent_id]
-            node.parent = parent
-            node.parent.children.append(node)
-
-    nodes = list([node for node in nodes if node.parent is None])
-    for i, node in enumerate(nodes):
-        node.child_index_of_parent = i
-    return nodes
 
 
 def node_path(node):
