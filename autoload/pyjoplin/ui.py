@@ -749,13 +749,15 @@ def edit_cur_search():
     if joplin is None:
         return
     note = joplin.get(NoteNode, id)
-    while True:
-        vim.command('wincmd w')
-        name = vim.Function('bufname')('%').decode()
-        if name != bufname():
-            break
-
-    edit_note('edit', False, note, 0)
+    curbufnr = vim.Function('bufnr')('%')
+    treebufnr = vim.Function('bufnr')(bufname())
+    buflist = vim.Function('tabpagebuflist')()
+    buflist = list(filter(lambda nr: nr not in [curbufnr, treebufnr], buflist))
+    bufnr = buflist[0] if len(buflist) > 0 else treebufnr
+    reopen = bufnr == treebufnr
+    winnr = vim.Function('bufwinnr')(bufnr)
+    vim.command('%dwincmd w' % winnr)
+    edit_note('edit', reopen, note, 0)
     vim.Function('setqflist')([], 'a', {'idx': line})
     if _last_query != '':
         vim.command('/%s' % _last_query)
