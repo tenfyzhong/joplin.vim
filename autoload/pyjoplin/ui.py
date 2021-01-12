@@ -112,17 +112,33 @@ def saveas(**kwargs):
         vim.command('echo "Joplin: please enter a name"')
         return
     path = kwargs['path']
+    if path == '':
+        vim.command('echo "Joplin: please enter a new name"')
+        return
+
+    folders = path.split('/')
+    parent = find_folder_by_path(folders)
+    if parent.node.id == '':
+        vim.command('echo "Joplin: not such notebook<%s>"' % path)
+        return
+
+    if parent.node.id == '':
+        vim.command('echo "Joplin: note should copy to a notebook"')
+        return
+
     is_todo = kwargs.get('is_todo', 0)
     new_title = vim.Function('expand')('%:p:t').decode()
     note = NoteNode()
     body = '\n'.join(vim.current.buffer[:])
+    note.parent_id = parent.node.id
     note.title = new_title
     note.body = body
     note.is_todo = is_todo
-    note = new_note_on_path(note, path)
+    note = get_joplin().post(note)
     if note is None:
         vim.command('echo "Joplin: New note failed"')
         return
+    refresh_render(parent)
     note_local_setting()
     vim.current.buffer.vars['joplin_note_id'] = note.id
     vim.command('noautocmd w')
@@ -196,6 +212,11 @@ def render_nodes(nr):
 
 
 def render():
+    winnr_saved = vim.Function('winnr')()
+    winnr = vim.Function('bufwinnr')(bufname())
+    if winnr < 0:
+        return
+    vim.command('%dwincmd w' % winnr)
     vim.current.buffer.options['modifiable'] = True
     del vim.current.buffer[:]
     nr = 0
@@ -205,6 +226,8 @@ def render():
     # delete empty line
     del vim.current.buffer[nr]
     vim.current.buffer.options['modifiable'] = False
+    if winnr_saved != winnr:
+        vim.command('%dwincmd w' % winnr_saved)
 
 
 def edit_note(command, reopen_tree, note, joplin_treenode_line):
@@ -651,7 +674,7 @@ def cmd_cp(treenode):
         vim.command('echo "Joplin: can not copy a notebook"')
         return
 
-    default_path = tree.node_path(treenode)
+    default_path = tree.node_path(treenode.parent)
     prompt = 'Copy %s to: ' % treenode.node.title
     path = input_path(prompt, default_path)
     if path == '':
@@ -673,7 +696,7 @@ def cmd_cp(treenode):
     new_note.id = ''
     new_note.created_time = 0
     new_note.updated_time = 0
-    new_note.parent = parent.node.id
+    new_note.parent_id = parent.node.id
     node = get_joplin().post(new_note)
     if node is not None:
         line = vim.Function('line')('.')
@@ -1042,45 +1065,3 @@ def input_path(prompt, default_path):
     vim.command('redraw!')
     vim.options['cmdheight'] = cmdheight_saved
     return path
-
-
-def new_note_on_path(note, path):
-    origin_path = path
-    if path == '':
-        vim.command('echo "Joplin: please enter a name"')
-        return None
-
-    input_is_folder = path.endswith('/')
-    if input_is_folder:
-        path = path[:-1]
-
-    folders = path.split('/')
-    last_item = ''
-    if not input_is_folder:
-        last_item = folders[-1]
-        folders = folders[:-1]
-
-    parent = find_folder_by_path(folders)
-    if parent is None or not parent.is_folder():
-        vim.command('echo "Joplin: not such notebook<%s>"' % origin_path)
-        return None
-    if not input_is_folder:
-        find = list(
-            filter(
-                lambda node: node.is_folder() and node.node.title == last_item,
-                parent.children))
-        if len(find) > 0:
-            parent = find[0]
-            input_is_folder = True
-            last_item = ''
-
-    note.title = last_item if last_item != '' else note.title
-    note.parent_id = parent.node.id
-    note.id = ''
-    note = get_joplin().post(note)
-    if note is not None:
-        line = vim.Function('line')('.')
-        refresh(parent)
-        render()
-        vim.Function('cursor')(line, 1)
-    return note
