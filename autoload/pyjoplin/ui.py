@@ -47,9 +47,9 @@ def set_options():
     vim.current.window.options['list'] = False
     vim.current.window.options['spell'] = False
     vim.current.window.options['wrap'] = False
-    vim.current.window.options['number'] = True
-    vim.current.window.options['relativenumber'] = False
     vim.current.window.options['cursorline'] = True
+    vim.current.window.options['number'] = options.number != 0
+    vim.current.window.options['relativenumber'] = options.relativenumber != 0
 
 
 def set_map():
@@ -248,6 +248,13 @@ def edit(command, treenode):
     edit_note(command, True, treenode.node, treenode.lineno)
 
 
+def note_map_command(lhs, command):
+    if lhs == '':
+        return
+    vim.command('nnoremap <silent><buffer>%s <esc>:<c-u>%s<cr>' %
+                (lhs, command))
+
+
 def note_local_setting():
     vim.command(
         'autocmd BufWritePost <buffer> python3 pyjoplin.note_cmd("write")')
@@ -283,6 +290,16 @@ def note_local_setting():
     vim.command('command! -buffer -nargs=1 '
                 '-complete=custom,JoplinNoteComplete JoplinLinkNote '
                 'python3 pyjoplin.note_cmd("cmd_link_note", title=<q-args>)')
+
+    note_map_command(options.map_note_info, 'JoplinNoteInfo')
+    note_map_command(options.map_note_type_convert, 'JoplinNoteTypeConvert')
+    note_map_command(options.map_note_complete_convert,
+                     'JoplinNoteCompleteConvert')
+    note_map_command(options.map_tag_add, 'JoplinTagAdd')
+    note_map_command(options.map_tag_del, 'JoplinTagDel')
+    note_map_command(options.map_resrouce_attach, 'JoplinResourceAttach')
+    note_map_command(options.map_link_resource, 'JoplinLinkResource')
+    note_map_command(options.map_link_note, 'JoplinLinkNote')
 
 
 def refresh_render(treenode):
