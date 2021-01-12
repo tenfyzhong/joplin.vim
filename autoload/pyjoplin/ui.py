@@ -205,35 +205,47 @@ def render():
     vim.current.buffer.options['modifiable'] = False
 
 
-def edit(command, treenode):
+def edit_note(command, reopen_tree, note, joplin_treenode_line):
     lazyredraw_saved = vim.options['lazyredraw']
     winview_saved = vim.Function('winsaveview')()
     undolevel_saved = vim.options['undolevels']
     vim.options['undolevels'] = -1
     dirname = vim.eval('tempname()')
     os.mkdir(dirname)
-    filename = dirname + '/' + treenode.node.title + '.md'
+    filename = dirname + '/' + note.title + '.md'
     vim.command('silent %s %s' % (command, filename))
-    vim.current.buffer.vars['joplin_note_id'] = treenode.node.id
-    vim.current.buffer.vars['joplin_treenode_line'] = treenode.lineno
-    treenode.fetch_note(get_joplin())
+    vim.current.buffer.vars['joplin_note_id'] = note.id
+    vim.current.buffer.vars['joplin_path'] = get_joplin().node_path(note)
+    vim.current.buffer.options['filetype'] = 'joplin.markdown'
+    if joplin_treenode_line > 0:
+        vim.current.buffer.vars['joplin_treenode_line'] = joplin_treenode_line
+
     vim.options['lazyredraw'] = True
-    vim.current.buffer[:] = treenode.node.body.split('\n')
+    vim.current.buffer[:] = note.body.split('\n')
     vim.command('silent noautocmd w')
-    # check joplin window
-    # reopen if not exist
-    winnr = vim.Function('bufwinnr')(bufname())
-    if winnr < 0:
-        note_bufname = vim.Function('bufname')()
-        open_window()
-        vim.Function('winrestview')(winview_saved)
-        winnr = vim.Function('bufwinnr')(note_bufname)
-        vim.command('%dwincmd w' % winnr)
+    if reopen_tree:
+        # check joplin window
+        # reopen if not exist
+        winnr = vim.Function('bufwinnr')(bufname())
+        if winnr < 0:
+            note_bufname = vim.Function('bufname')()
+            open_window()
+            vim.Function('winrestview')(winview_saved)
+            winnr = vim.Function('bufwinnr')(note_bufname)
+            vim.command('%dwincmd w' % winnr)
 
     vim.command('redraw!')
+    vim.command('silent call joplin#statusline#refresh()')
+
     vim.options['lazyredraw'] = lazyredraw_saved
     vim.options['undolevels'] = undolevel_saved
+    filename = get_joplin().node_path(note)
     note_local_setting()
+
+
+def edit(command, treenode):
+    treenode.fetch_note(get_joplin())
+    edit_note(command, True, treenode.node, treenode.lineno)
 
 
 def note_local_setting():
@@ -675,8 +687,54 @@ def search(**kwargs):
     if 'query' not in kwargs:
         return
     query = kwargs['query']
-    nodes = get_joplin().search(query)
-    print(nodes)
+    if query == '':
+        return
+    joplin = get_joplin()
+    if joplin is None:
+        return
+    nodes = joplin.search(query)
+    if len(nodes) == 0:
+        vim.command('echo "Joplin: search <%s>, not found"' % query)
+        return
+    items = list([{
+        'text': joplin.node_path(node) + "| " + node.id,
+    } for node in nodes])
+
+    title = 'JoplinSearch "%s"' % query
+    result = vim.Function('setqflist')(
+        [], 'r', {
+            'title': title,
+            'items': items,
+            'efm': '%%f: %%m',
+            'context': 'JoplinSearch',
+            'quickfixtextfunc': 'joplin#search#quickfixtext',
+        })
+    if result == 0:
+        size = len(nodes)
+        vim.command('copen %d' % (size if size < 10 else 10))
+        vim.command('nnoremap <silent><buffer><cr> :python3 '
+                    'pyjoplin.run("edit_cur_search")<cr>')
+
+
+def edit_cur_search():
+    line = vim.Function('line')('.')
+    content = vim.Function('getline')(line).decode()
+    items = content.split('|')
+    if len(items) < 2:
+        return
+    id = items[-1].strip()
+    joplin = get_joplin()
+    if joplin is None:
+        return
+    note = joplin.get(NoteNode, id)
+    while True:
+        vim.command('wincmd w')
+        name = vim.Function('bufname')('%').decode()
+        if name != bufname():
+            break
+
+    edit_note('edit', False, note, 0)
+    vim.Function('setqflist')([], 'a', {'idx': line})
 
 
 # ============================== note cmds
