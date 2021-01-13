@@ -276,8 +276,7 @@ def edit(command, treenode):
 def note_map_command(lhs, command):
     if lhs == '':
         return
-    vim.command('nnoremap <silent><buffer>%s <esc>:<c-u>%s<cr>' %
-                (lhs, command))
+    vim.command('nnoremap <buffer>%s <esc>:<c-u>%s' % (lhs, command))
 
 
 def note_local_setting():
@@ -316,15 +315,16 @@ def note_local_setting():
                 '-complete=custom,JoplinNoteComplete JoplinLinkNote '
                 'python3 pyjoplin.note_cmd("cmd_link_note", title=<q-args>)')
 
-    note_map_command(options.map_note_info, 'JoplinNoteInfo')
-    note_map_command(options.map_note_type_convert, 'JoplinNoteTypeConvert')
+    note_map_command(options.map_note_info, 'JoplinNoteInfo<cr>')
+    note_map_command(options.map_note_type_convert,
+                     'JoplinNoteTypeConvert<cr>')
     note_map_command(options.map_note_complete_convert,
-                     'JoplinNoteCompleteConvert')
-    note_map_command(options.map_tag_add, 'JoplinTagAdd')
-    note_map_command(options.map_tag_del, 'JoplinTagDel')
-    note_map_command(options.map_resrouce_attach, 'JoplinResourceAttach')
-    note_map_command(options.map_link_resource, 'JoplinLinkResource')
-    note_map_command(options.map_link_note, 'JoplinLinkNote')
+                     'JoplinNoteCompleteConvert<cr>')
+    note_map_command(options.map_tag_add, 'JoplinTagAdd ')
+    note_map_command(options.map_tag_del, 'JoplinTagDel ')
+    note_map_command(options.map_resrouce_attach, 'JoplinResourceAttach ')
+    note_map_command(options.map_link_resource, 'JoplinLinkResource ')
+    note_map_command(options.map_link_note, 'JoplinLinkNote ')
 
 
 def refresh_render(treenode):
