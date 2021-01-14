@@ -20,10 +20,12 @@ class TreeNode(object):
         self.child_index_of_parent = -1
 
     def __str__(self):
-        return '%d:%d:%s' % (len(self.children), self.lineno, str(self.node))
+        return 'isopen,%s:%d:%d:%s' % (self._open, len(
+            self.children), self.lineno, str(self.node))
 
     def __repr__(self):
-        return '%d:%d:%s' % (len(self.children), self.lineno, str(self.node))
+        return 'isopen,%s:%d:%d:%s' % (self._open, len(
+            self.children), self.lineno, str(self.node))
 
     def text(self, iconopen, iconclose, iconnote, icontodo, iconcompleted):
         sign = ''

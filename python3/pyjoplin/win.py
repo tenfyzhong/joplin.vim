@@ -48,16 +48,20 @@ class Win(object):
         self._root = None
         self._last_query = None
         self._has_help = False
+        self._inited = False
 
     def health(self):
         return self._joplin and self._joplin.ping()
 
     def init(self):
+        if self._inited:
+            return
         self._joplin = joplin.Joplin(options.token, options.host, options.port)
         if not self._joplin.ping():
             return
         self._root = tree.construct_root(self._joplin, options.folder_order_by,
                                          options.folder_order_desc)
+        self._inited = True
 
     def open(self):
         """open joplin window
@@ -293,7 +297,7 @@ class Win(object):
         return '\n'.join(lines)
 
     def complete_folder(self, arg_lead):
-        path = arg_lead.split(r'/')
+        path = arg_lead.split('/')
         path = path[:-1]
         root = self.find_folder_by_path(path)
         if root is None:
@@ -533,6 +537,7 @@ class Win(object):
         if treenode is None:
             return
 
+        origin_parent = treenode.parent
         default_path = '' if treenode.parent is None else tree.node_path(
             treenode.parent)
         prompt = 'Move %s to: ' % treenode.node.title
@@ -557,8 +562,8 @@ class Win(object):
         node = self._joplin.put(node)
         if node is not None:
             line = vim.Function('line')('.')
+            self.refresh(origin_parent)
             self.refresh(parent)
-            self.refresh(treenode.parent)
             self.render()
             vim.Function('cursor')(line, 1)
 
