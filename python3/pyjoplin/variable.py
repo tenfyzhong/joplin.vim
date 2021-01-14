@@ -3,51 +3,6 @@
 
 from . import joplin, options, tree
 
-_j = None
-_root = None
-
-
-def get_joplin():
-    global _j
-    if _j is None:
-        if options.token == '':
-            vim.command('echo "Joplin: g:joplin_token is empty"')
-            return None
-
-        j = joplin.Joplin(options.token, options.host, options.port)
-        if j is None:
-            vim.command('echo "Joplin: can not create joplin instance"')
-            return None
-        if not j.ping():
-            vim.command('echo "Joplin: can not create joplin instance"')
-            return None
-
-        _j = j
-    return _j
-
-
-def get_root():
-    global _root
-    if _root is None:
-        j = get_joplin()
-        if j is None:
-            return None
-        _root = tree.construct_root(j, options.folder_order_by,
-                                    options.folder_order_desc)
-
-    return _root
-
-
-def delete_node_in_list(nodes, id):
-    if nodes is None or id == '':
-        return nodes
-
-    return list(filter(lambda node: node.node.id != id, nodes))
-
-
-def del_child(root, id):
-    root.children = delete_node_in_list(root.children, id)
-
 
 def bufname():
     return 'tree.joplin'
