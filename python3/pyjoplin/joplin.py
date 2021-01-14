@@ -294,8 +294,8 @@ class Joplin(object):
         except requests.ConnectionError:
             print('Joplin: joplin.app not available')
             return None
-        except Exception:
-            print('Joplin: joplin.app error')
+        except Exception as e:
+            print('Joplin: joplin.app error', e)
             return None
         return ResourceNode(**j)
 

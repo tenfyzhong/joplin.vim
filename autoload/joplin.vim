@@ -15,7 +15,7 @@ function! joplin#open() abort
 endfunction
 
 function! joplin#close() abort
-  python3 python3.win.close()
+  python3 pyjoplin.win.close()
 endfunction
 
 function! joplin#toggle() abort
@@ -23,7 +23,7 @@ function! joplin#toggle() abort
 endfunction
 
 function! joplin#saveas(is_todo, folder) abort
-  python3 pyjoplin.win.saveas(vim.eval('a:folder'), vim.eval('a:is_todo'))
+  python3 pyjoplin.win.saveas(vim.eval('a:is_todo'), vim.eval('a:folder'))
 endfunction
 
 function! joplin#search(query) abort

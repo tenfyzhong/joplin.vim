@@ -107,7 +107,7 @@ class Win(object):
     def saveas(self, is_todo, path):
         folders = path.split('/')
         parent = self.find_folder_by_path(folders)
-        if parent.node.id == '':
+        if parent is None:
             vim.command('echo "Joplin: not such notebook<%s>"' % path)
             return
 
@@ -760,7 +760,7 @@ class Win(object):
         if find is not None:
             self._joplin.post_tag_note(find.id, note_id)
 
-    def cmd_tag_del(self, note_id, title):
+    def cmd_tag_del(self, title):
         if title == '':
             return
         note_id = vim.current.buffer.vars.get('joplin_note_id', b'').decode()
@@ -804,7 +804,7 @@ class Win(object):
         title = os.path.basename(filepath)
         resource = ResourceNode(title=title)
         resource = self._joplin.post_resource(filepath, resource)
-        if resource.id == '':
+        if resource is None or resource.id is None:
             vim.command('echo "Joplin: attach resource failed"')
             return
         insert_markdown_link(resource)
@@ -818,13 +818,13 @@ class Win(object):
             return
         insert_markdown_link(matched[0])
 
-    def cmd_link_note(self, title):
+    def cmd_link_node(self, title):
         path = title.split('/')
         root = self.find_node_by_path(path)
         if root is None:
             vim.command('echo "Joplin: not such note: %s"' % title)
             return
-        insert_markdown_link(root.node.markdown_link())
+        insert_markdown_link(root.node)
 
     def base_line(self):
         return len(variable.window_title) + (len(variable.help_lines)
@@ -965,8 +965,8 @@ def note_local_setting():
                 '-complete=custom,joplin#complete#resource JoplinLinkResource '
                 'python3 pyjoplin.win.cmd_link_resource(<q-args>)')
     vim.command('command! -buffer -nargs=1 '
-                '-complete=custom,joplin#complete#note JoplinLinkNote '
-                'python3 pyjoplin.win.cmd_link_note(<q-args>)')
+                '-complete=custom,joplin#complete#note JoplinLinkNode '
+                'python3 pyjoplin.win.cmd_link_node(<q-args>)')
 
     note_map_command(options.map_note_info, 'JoplinNoteInfo<cr>')
     note_map_command(options.map_note_type_convert,
@@ -977,7 +977,7 @@ def note_local_setting():
     note_map_command(options.map_tag_del, 'JoplinTagDel ')
     note_map_command(options.map_resrouce_attach, 'JoplinResourceAttach ')
     note_map_command(options.map_link_resource, 'JoplinLinkResource ')
-    note_map_command(options.map_link_note, 'JoplinLinkNote ')
+    note_map_command(options.map_link_node, 'JoplinLinkNode ')
 
 
 def insert_markdown_link(node):
