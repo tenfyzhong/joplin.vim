@@ -75,7 +75,7 @@ class Win(object):
                     (options.window_width, bufname_))
         set_options()
         set_map()
-        self.render()
+        self._render()
         last_line = vim.current.buffer.vars.get('saved_last_line',
                                                 len(variable.window_title) + 1)
         vim.Function('cursor')(last_line, 1)
@@ -106,7 +106,7 @@ class Win(object):
 
     def saveas(self, is_todo, path):
         folders = path.split('/')
-        parent = self.find_folder_by_path(folders)
+        parent = self._find_folder_by_path(folders)
         if parent is None:
             vim.command('echo "Joplin: not such notebook<%s>"' % path)
             return
@@ -126,12 +126,12 @@ class Win(object):
         if note is None:
             vim.command('echo "Joplin: New note failed"')
             return
-        self.refresh_render(parent)
+        self._refresh_render(parent)
         note_local_setting()
         vim.current.buffer.vars['joplin_note_id'] = note.id
         vim.command('noautocmd w')
 
-    def render_help(self, nr):
+    def _render_help(self, nr):
         lines = variable.help_lines if self._has_help else []
         for text in lines:
             vim.current.buffer.append(text, nr)
@@ -149,14 +149,14 @@ class Win(object):
             nr += 1
         return nr
 
-    def render_title(self, nr):
+    def _render_title(self, nr):
         for text in variable.window_title:
             vim.current.buffer.append(text, nr)
             prop_add(nr + 1, 'joplin_window_title')
             nr += 1
         return nr
 
-    def render_nodes(self, nr):
+    def _render_nodes(self, nr):
         root = self._root
         if root is None:
             return nr
@@ -174,7 +174,7 @@ class Win(object):
 
         return nr
 
-    def render(self):
+    def _render(self):
         winnr_saved = vim.Function('winnr')()
         winnr = vim.Function('bufwinnr')(bufname())
         if winnr < 0:
@@ -183,16 +183,16 @@ class Win(object):
         vim.current.buffer.options['modifiable'] = True
         del vim.current.buffer[:]
         nr = 0
-        nr = self.render_help(nr)
-        nr = self.render_title(nr)
-        nr = self.render_nodes(nr)
+        nr = self._render_help(nr)
+        nr = self._render_title(nr)
+        nr = self._render_nodes(nr)
         # delete empty line
         del vim.current.buffer[nr]
         vim.current.buffer.options['modifiable'] = False
         if winnr_saved != winnr:
             vim.command('%dwincmd w' % winnr_saved)
 
-    def edit_note(self, command, reopen_tree, note, joplin_treenode_line):
+    def _edit_note(self, command, reopen_tree, note, joplin_treenode_line):
         lazyredraw_saved = vim.options['lazyredraw']
         winview_saved = vim.Function('winsaveview')()
         undolevel_saved = vim.options['undolevels']
@@ -232,13 +232,13 @@ class Win(object):
 
     def edit(self, command, treenode):
         treenode.fetch_note(self._joplin)
-        self.edit_note(command, True, treenode.node, treenode.lineno)
+        self._edit_note(command, True, treenode.node, treenode.lineno)
 
-    def refresh_render(self, treenode):
-        self.refresh(treenode)
-        self.render()
+    def _refresh_render(self, treenode):
+        self._refresh(treenode)
+        self._render()
 
-    def refresh(self, treenode):
+    def _refresh(self, treenode):
         if treenode is None:
             return
         if not treenode.is_folder():
@@ -255,7 +255,7 @@ class Win(object):
                               options.folder_order_desc, options.note_order_by,
                               options.note_order_desc)
         for child in treenode.children:
-            self.refresh(child)
+            self._refresh(child)
 
     # ============================== complete
     def complete_note_tag(self):
@@ -281,7 +281,7 @@ class Win(object):
     def complete_note(self, arg_lead):
         path = arg_lead.split(r'/')
         path = path[:-1]
-        root = self.find_folder_by_path(path)
+        root = self._find_folder_by_path(path)
         if root is None:
             return ''
         root.fetch_folder(self._joplin, options.pin_todo,
@@ -299,7 +299,7 @@ class Win(object):
     def complete_folder(self, arg_lead):
         path = arg_lead.split('/')
         path = path[:-1]
-        root = self.find_folder_by_path(path)
+        root = self._find_folder_by_path(path)
         if root is None:
             return ''
         dirname = tree.node_path(root)
@@ -327,7 +327,7 @@ class Win(object):
                               options.folder_order_desc, options.note_order_by,
                               options.note_order_desc)
             saved_pos = vim.eval('getcurpos()')
-            self.render()
+            self._render()
             vim.Function('setpos')('.', saved_pos)
         else:
             go_to_previous_win()
@@ -377,7 +377,7 @@ class Win(object):
         else:
             self.open_recusively(treenode)
 
-        self.render()
+        self._render()
         cursor(treenode)
 
     def cmd_x(self, treenode):
@@ -389,7 +389,7 @@ class Win(object):
             return
 
         parent.close()
-        self.render()
+        self._render()
         cursor(parent)
 
     def close_recurisive(self, node):
@@ -407,7 +407,7 @@ class Win(object):
         if not treenode.is_folder():
             return
         self.close_recurisive(treenode)
-        self.render()
+        self._render()
         cursor(treenode)
 
     def cmd_r(self, treenode):
@@ -417,7 +417,7 @@ class Win(object):
         lastnode = treenode
         if not treenode.is_folder():
             treenode = treenode.parent
-        self.refresh_render(treenode)
+        self._refresh_render(treenode)
         cursor(lastnode)
         vim.command('echo "Joplin: Refreshed!"')
 
@@ -428,7 +428,7 @@ class Win(object):
         lastnode = treenode
         while treenode.parent is not None:
             treenode = treenode.parent
-        self.refresh_render(treenode)
+        self._refresh_render(treenode)
         cursor(lastnode)
         vim.command('echo "Joplin: Refreshed!"')
 
@@ -486,7 +486,7 @@ class Win(object):
 
     def cmd_question_mark(self):
         self._has_help = not self._has_help
-        self.render()
+        self._render()
         vim.Function('cursor')(1, 1)
 
     def cmd_ab(self):
@@ -517,7 +517,7 @@ class Win(object):
             vim.command('echo "Joplin: a note/todo should add to a notebook"')
             return
 
-        parent = self.find_folder_by_path(folders)
+        parent = self._find_folder_by_path(folders)
         if parent is None:
             vim.command('echo "Joplin: not such notebook<%s>"' %
                         '/'.join(folders))
@@ -530,7 +530,7 @@ class Win(object):
         node = self._joplin.post(new_node)
         if node is not None:
             line = vim.Function('line')('.')
-            self.refresh_render(parent)
+            self._refresh_render(parent)
             vim.Function('cursor')(line, 1)
 
     def cmd_mv(self, treenode):
@@ -543,7 +543,7 @@ class Win(object):
         prompt = 'Move %s to: ' % treenode.node.title
         path = input_path(prompt, default_path)
         folders = path.split('/')
-        parent = self.find_folder_by_path(folders)
+        parent = self._find_folder_by_path(folders)
         if parent is None or not parent.is_folder():
             vim.command('echo "Joplin: not such notebook<%s>"' % path)
             return
@@ -562,9 +562,9 @@ class Win(object):
         node = self._joplin.put(node)
         if node is not None:
             line = vim.Function('line')('.')
-            self.refresh(origin_parent)
-            self.refresh(parent)
-            self.render()
+            self._refresh(origin_parent)
+            self._refresh(parent)
+            self._render()
             vim.Function('cursor')(line, 1)
 
     def cmd_cp(self, treenode):
@@ -583,7 +583,7 @@ class Win(object):
             return
 
         folders = path.split('/')
-        parent = self.find_folder_by_path(folders)
+        parent = self._find_folder_by_path(folders)
         if parent is None or not parent.is_folder():
             vim.command('echo "Joplin: not such notebook<%s>"' % path)
             return
@@ -601,7 +601,7 @@ class Win(object):
         node = self._joplin.post(new_note)
         if node is not None:
             line = vim.Function('line')('.')
-            self.refresh_render(parent)
+            self._refresh_render(parent)
             vim.Function('cursor')(line, 1)
 
     def cmd_dd(self, treenode):
@@ -629,10 +629,7 @@ class Win(object):
                 vim.command('echo "Joplin: <%s> deleted"' %
                             treenode.node.title)
                 line = vim.Function('line')('.')
-                # treenode.parent.children = del_child(treenode.parent,
-                #                                      treenode.node.id)
-                # self.render()
-                self.refresh_render(parent)
+                self._refresh_render(parent)
 
                 vim.Function('cursor')(line, 1)
                 break
@@ -685,7 +682,7 @@ class Win(object):
         reopen = bufnr == treebufnr
         winnr = vim.Function('bufwinnr')(bufnr)
         vim.command('%dwincmd w' % winnr)
-        self.edit_note('edit', reopen, note, 0)
+        self._edit_note('edit', reopen, note, 0)
         vim.Function('setqflist')([], 'a', {'idx': line})
         if self._last_query != '':
             vim.command('/%s' % self._last_query)
@@ -783,7 +780,7 @@ class Win(object):
         self._joplin.put(note)
         line = vim.current.buffer.vars.get('joplin_treenode_line', -1)
         if line != -1:
-            self.refresh_treenode_line(line)
+            self._refresh_treenode_line(line)
 
     def cmd_note_complete_convert(self):
         note_id = vim.current.buffer.vars.get('joplin_note_id', b'').decode()
@@ -798,7 +795,7 @@ class Win(object):
         self._joplin.put(note)
         line = vim.current.buffer.vars.get('joplin_treenode_line', -1)
         if line != -1:
-            self.refresh_treenode_line(line)
+            self._refresh_treenode_line(line)
 
     def cmd_resource_attach(self, filepath):
         title = os.path.basename(filepath)
@@ -820,23 +817,23 @@ class Win(object):
 
     def cmd_link_node(self, title):
         path = title.split('/')
-        root = self.find_node_by_path(path)
+        root = self._find_node_by_path(path)
         if root is None:
             vim.command('echo "Joplin: not such note: %s"' % title)
             return
         insert_markdown_link(root.node)
 
-    def base_line(self):
+    def _base_line(self):
         return len(variable.window_title) + (len(variable.help_lines)
                                              if self._has_help else 0)
 
     def get_cur_line(self):
         lineno = int(vim.eval('line(".")'))
-        if lineno <= self.base_line():
+        if lineno <= self._base_line():
             return None
         return find_treenode(self._root, lineno)
 
-    def refresh_treenode_line(self, line):
+    def _refresh_treenode_line(self, line):
         winnr = vim.Function('bufwinnr')(bufname())
         if winnr <= 0:
             return
@@ -847,12 +844,12 @@ class Win(object):
         treenode = find_treenode(self._root, line)
         if treenode is not None and not treenode.is_folder():
             treenode = treenode.parent
-        self.refresh_render(treenode)
+        self._refresh_render(treenode)
         vim.command('%dwincmd w' % winnr_saved)
         vim.command('redraw!')
         vim.options['lazyredraw'] = lazyredraw_saved
 
-    def find_node_by_path(self, path):
+    def _find_node_by_path(self, path):
         path = filter(lambda p: p != '', path)
         root = self._root
         # todo delete root checker
@@ -867,8 +864,8 @@ class Win(object):
 
         return root if root.node is not None else None
 
-    def find_folder_by_path(self, path):
-        node = self.find_node_by_path(path)
+    def _find_folder_by_path(self, path):
+        node = self._find_node_by_path(path)
         return node if node is not None and node.is_folder() else None
 
 
