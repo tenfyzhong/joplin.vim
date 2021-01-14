@@ -91,5 +91,3 @@ win_mapping = {
 unmap = ['<C-r>', 'u', 'U', 'I', 'a', 'A', 's', 'S', 'd', 'D', 'c', 'C']
 
 info_popup_guide = "*press 'q' to close the window*"
-menu_popup_guide = "Use j:<down>/k:<up>/q:<quit>/enter,space:<select>,"\
-    " or the shortcuts indicated"
