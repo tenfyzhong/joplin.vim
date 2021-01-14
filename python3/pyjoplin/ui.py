@@ -293,11 +293,11 @@ def note_local_setting():
 
     # command for tag
     vim.command(
-        'command! -buffer -nargs=1 -complete=customlist,JoplinAllTagComplete '
+        'command! -buffer -nargs=1 -complete=custom,joplin#complete#tag '
         'JoplinTagAdd python3 '
         'pyjoplin.note_cmd("cmd_tag_add", title=<q-args>)')
     vim.command(
-        'command! -buffer -nargs=1 -complete=customlist,JoplinNoteTagComplete '
+        'command! -buffer -nargs=1 -complete=custom,joplin#complete#note_tag '
         'JoplinTagDel python3 '
         'pyjoplin.note_cmd("cmd_tag_del", title=<q-args>)')
 
@@ -309,10 +309,10 @@ def note_local_setting():
     # command for link
     vim.command(
         'command! -buffer -nargs=1 '
-        '-complete=customlist,JoplinAllResourceComplete JoplinLinkResource '
+        '-complete=custom,joplin#complete#resource JoplinLinkResource '
         'python3 pyjoplin.note_cmd("cmd_link_resource", title=<q-args>)')
     vim.command('command! -buffer -nargs=1 '
-                '-complete=custom,JoplinNoteComplete JoplinLinkNote '
+                '-complete=custom,joplin#complete#note JoplinLinkNote '
                 'python3 pyjoplin.note_cmd("cmd_link_note", title=<q-args>)')
 
     note_map_command(options.map_note_info, 'JoplinNoteInfo<cr>')
@@ -354,54 +354,53 @@ def refresh(treenode):
 
 # ============================== run functions
 def run(funcname, **kwargs):
-    eval('%s(**kwargs)' % funcname)
+    return eval('%s(**kwargs)' % funcname)
 
 
 def treenode_cmd(funcname, **kwargs):
     treenode = get_cur_line()
     if treenode is None:
         return
-    eval("%s(treenode, **kwargs)" % funcname)
+    return eval("%s(treenode, **kwargs)" % funcname)
 
 
 def note_cmd(funcname, **kwargs):
     note_id = vim.current.buffer.vars.get('joplin_note_id', b'').decode()
     if note_id == '':
         return
-    eval("%s(note_id, **kwargs)" % funcname)
+    return eval("%s(note_id, **kwargs)" % funcname)
 
 
 # ============================== complete
-def note_tag_titles():
+def complete_note_tag():
     note_id = vim.current.buffer.vars.get('joplin_note_id', b'').decode()
     if note_id == '':
-        return []
-    return list([tag.title for tag in get_joplin().get_note_tags(note_id)])
+        return ''
+    tags = list([tag.title for tag in get_joplin().get_note_tags(note_id)])
+    tags = sorted(tags)
+    return '\n'.join(tags)
 
 
-def all_resource_titles():
+def complete_resource():
     resources = get_joplin().get_all(ResourceNode)
     titles = list([resource.title for resource in resources])
-    return titles
+    titles = sorted(list(set(titles)))
+    return '\n'.join(titles)
 
 
-def all_tag_titles():
+def complete_tag():
     tags = get_joplin().get_all(TagNode)
     titles = list([tag.title for tag in tags])
-    return titles
+    titles = sorted(list(set(titles)))
+    return '\n'.join(titles)
 
 
-def note_match_text(**kwargs):
-    if 'arg_lead' not in kwargs or 'var' not in kwargs:
-        return
-    arg_lead = kwargs['arg_lead']
-    var = kwargs['var']
-    vim.current.buffer.vars[var] = ''
+def complete_note(arg_lead):
     path = arg_lead.split(r'/')
     path = path[:-1]
     root = find_folder_by_path(path)
     if root is None:
-        return
+        return ''
     root.fetch_folder(get_joplin(), options.pin_todo, options.hide_completed,
                       options.folder_order_by, options.folder_order_desc,
                       options.note_order_by, options.note_order_desc)
@@ -409,21 +408,15 @@ def note_match_text(**kwargs):
     lines = list([dirname + '/' + node.node.title for node in root.children])
     lines = list(
         map(lambda line: line[1:] if line.startswith('/') else line, lines))
-    text = '\n'.join(lines)
-    vim.current.buffer.vars[var] = text
+    return '\n'.join(lines)
 
 
-def folder_match_text(**kwargs):
-    if 'arg_lead' not in kwargs or 'var' not in kwargs:
-        return
-    arg_lead = kwargs['arg_lead']
-    var = kwargs['var']
-    vim.current.buffer.vars[var] = ''
+def complete_folder(arg_lead):
     path = arg_lead.split(r'/')
     path = path[:-1]
     root = find_folder_by_path(path)
     if root is None:
-        return
+        return ''
     dirname = tree.node_path(root)
     lines = list([
         dirname + '/' + node.node.title for node in root.children
@@ -432,16 +425,15 @@ def folder_match_text(**kwargs):
     lines = list(
         map(lambda line: line[1:] if line.startswith('/') else line, lines))
     text = '\n'.join(lines)
-    vim.current.buffer.vars[var] = text
+    return text
 
 
 def words2bvar(**kwargs):
     if 'var' not in kwargs or 'wordsfunc' not in kwargs:
         return
-    var = kwargs['var']
     wordsfunc = kwargs['wordsfunc']
     titles = eval(wordsfunc + '()')
-    vim.current.buffer.vars[var] = titles
+    return titles
 
 
 # ============================== treenode cmd
@@ -1059,8 +1051,8 @@ def input_path(prompt, default_path):
     vim.command('redraw!')
     # vim.command('echo "%s"' % prompt1)
     vim.command('echo " "')
-    path = vim.Function('input')(
-        prompt, default_path, 'custom,joplin#joplin_folder_complete').decode()
+    path = vim.Function('input')(prompt, default_path,
+                                 'custom,joplin#complete#folder').decode()
     path = path.strip()
     vim.command('redraw!')
     vim.options['cmdheight'] = cmdheight_saved
