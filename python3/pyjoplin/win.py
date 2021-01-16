@@ -63,8 +63,10 @@ class Win(object):
         self._root = tree.construct_root(self._joplin, options.folder_order_by,
                                          options.folder_order_desc)
 
-        base = os.path.dirname(os.path.realpath(__file__))
+        base = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
         self._info_dir = os.path.join(base, '.info')
+        print(self._info_dir)
         self._inited = True
 
     def open(self):
@@ -983,7 +985,7 @@ def note_map_command(lhs, command):
 
 def note_local_setting():
     vim.command('autocmd BufWritePost <buffer> python3 pyjoplin.win.write()')
-    vim.command('autocmd BufLeave <buffer> python3 pyjoplin.win.leave()')
+    vim.command('autocmd BufWinLeave <buffer> python3 pyjoplin.win.leave()')
 
     # command for note
     vim.command('command! -buffer -nargs=0 JoplinNoteInfo python3 '
