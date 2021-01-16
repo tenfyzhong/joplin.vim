@@ -983,7 +983,7 @@ def note_map_command(lhs, command):
 
 def note_local_setting():
     vim.command('autocmd BufWritePost <buffer> python3 pyjoplin.win.write()')
-    vim.command('autocmd BufUnload <buffer> python3 pyjoplin.win.leave()')
+    vim.command('autocmd BufLeave <buffer> python3 pyjoplin.win.leave()')
 
     # command for note
     vim.command('command! -buffer -nargs=0 JoplinNoteInfo python3 '
