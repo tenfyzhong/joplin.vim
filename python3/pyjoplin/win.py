@@ -3,6 +3,7 @@
 
 import os
 import re
+import tempfile
 from datetime import datetime
 
 import vim
@@ -49,7 +50,11 @@ class Win(object):
         self._last_query = None
         self._has_help = False
         self._inited = False
-        self._info_dir = ''
+        self._basedir = tempfile.mkdtemp()
+
+        base = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+        self._info_dir = os.path.join(base, '.info')
 
     def health(self):
         return self._joplin and self._joplin.ping()
@@ -63,10 +68,6 @@ class Win(object):
         self._root = tree.construct_root(self._joplin, options.folder_order_by,
                                          options.folder_order_desc)
 
-        base = os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-        self._info_dir = os.path.join(base, '.info')
-        print(self._info_dir)
         self._inited = True
 
     def open(self):
@@ -249,9 +250,14 @@ class Win(object):
         winview_saved = vim.Function('winsaveview')()
         undolevel_saved = vim.options['undolevels']
         vim.options['undolevels'] = -1
-        dirname = vim.eval('tempname()')
-        os.mkdir(dirname)
-        filename = dirname + '/' + note.title + '.md'
+        dirname = os.path.join(self._basedir, note.id)
+        filename = os.path.join(dirname, note.title + '.md')
+        try:
+            os.mkdir(dirname)
+        except:
+            pass
+
+        existed = os.path.isfile(filename)
         vim.command('silent %s %s' % (command, filename))
         vim.current.buffer.vars['joplin_note_id'] = note.id
         vim.current.buffer.vars['joplin_path'] = self._joplin.node_path(note)
@@ -261,8 +267,10 @@ class Win(object):
                 'joplin_treenode_line'] = joplin_treenode_line
 
         vim.options['lazyredraw'] = True
-        vim.current.buffer[:] = note.body.split('\n')
-        vim.command('silent noautocmd w')
+        if not existed:
+            vim.current.buffer[:] = note.body.split('\n')
+            vim.command('silent noautocmd w')
+
         if reopen_tree:
             # check joplin window
             # reopen if not exist
