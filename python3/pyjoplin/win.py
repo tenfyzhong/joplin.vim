@@ -49,6 +49,7 @@ class Win(object):
         self._last_query = None
         self._has_help = False
         self._inited = False
+        self._info_dir = ''
 
     def health(self):
         return self._joplin and self._joplin.ping()
@@ -61,6 +62,9 @@ class Win(object):
             return
         self._root = tree.construct_root(self._joplin, options.folder_order_by,
                                          options.folder_order_desc)
+
+        base = os.path.dirname(os.path.realpath(__file__))
+        self._info_dir = os.path.join(base, '.info')
         self._inited = True
 
     def open(self):
@@ -103,6 +107,11 @@ class Win(object):
 
         note.body = '\n'.join(vim.current.buffer[:])
         self._joplin.put(note)
+
+    def leave(self):
+        note_id = vim.current.buffer.vars.get('joplin_note_id', b'').decode()
+        if note_id != '':
+            self._save_pos(note_id)
 
     def saveas(self, is_todo, path):
         folders = path.split('/')
@@ -192,6 +201,47 @@ class Win(object):
         if winnr_saved != winnr:
             vim.command('%dwincmd w' % winnr_saved)
 
+    def _save_pos(self, id):
+        path = os.path.join(self._info_dir, id)
+        winid = vim.Function('bufwinid')('%')
+        wininfo = vim.Function('getwininfo')(winid)
+        if len(wininfo) == 0:
+            return
+        last_cursor = wininfo[0].get('variables',
+                                     {}).get('last_cursor', [0, 1, 1, 0, 0])
+        lnum = last_cursor[1]
+        col = last_cursor[2]
+        topline = wininfo[0].get('topline', 1)
+        try:
+            with open(path, 'w') as f:
+                f.write('%d,%d,%d' % (lnum, col, topline))
+        except:
+            pass
+
+    def _set_pos(self, id):
+        path = os.path.join(self._info_dir, id)
+        try:
+            with open(path) as f:
+                line = f.readline()
+                items = line.split(',')
+                if len(items) < 3:
+                    return
+                lnum = int(items[0])
+                col = int(items[1])
+                topline = int(items[2])
+                lnum = lnum if lnum > 0 else 1
+                col = col if col > 0 else 1
+                topline = topline if topline > 0 else lnum
+
+                scrolloff_saved = vim.options['scrolloff']
+                vim.options['scrolloff'] = 0
+                vim.command('normal! %dzt' % topline)
+                vim.options['scrolloff'] = scrolloff_saved
+
+                vim.Function('cursor')(lnum, col)
+        except:
+            pass
+
     def _edit_note(self, command, reopen_tree, note, joplin_treenode_line):
         lazyredraw_saved = vim.options['lazyredraw']
         winview_saved = vim.Function('winsaveview')()
@@ -222,12 +272,12 @@ class Win(object):
                 winnr = vim.Function('bufwinnr')(note_bufname)
                 vim.command('%dwincmd w' % winnr)
 
+        self._set_pos(note.id)
         vim.command('redraw!')
         vim.command('silent call joplin#statusline#refresh()')
 
         vim.options['lazyredraw'] = lazyredraw_saved
         vim.options['undolevels'] = undolevel_saved
-        vim.Function('cursor')(1, 1)
         note_local_setting()
 
     def edit(self, command, treenode):
@@ -933,6 +983,7 @@ def note_map_command(lhs, command):
 
 def note_local_setting():
     vim.command('autocmd BufWritePost <buffer> python3 pyjoplin.win.write()')
+    vim.command('autocmd BufUnload <buffer> python3 pyjoplin.win.leave()')
 
     # command for note
     vim.command('command! -buffer -nargs=0 JoplinNoteInfo python3 '
