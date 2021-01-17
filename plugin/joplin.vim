@@ -13,9 +13,6 @@ if !exists('g:joplin_token')
   finish
 endif
 
-hi default JoplinPopup ctermfg=12 ctermbg=0 guibg=Magenta
-hi default MenuItemIndicator term=bold cterm=underline
-
 command! -nargs=0 JoplinWinOpen call joplin#open()
 command! -nargs=0 JoplinWinClose call joplin#close()
 command! -nargs=0 Joplin call joplin#toggle()

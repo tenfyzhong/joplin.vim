@@ -25,7 +25,6 @@ props = {
     'joplin_help_prefix': 'String',
     'joplin_popup_info_tag': 'Statement',
     'joplin_popup_guide': 'Comment',
-    'joplin_popup_indicator': 'MenuItemIndicator',
 }
 
 for name, highlight in props.items():
