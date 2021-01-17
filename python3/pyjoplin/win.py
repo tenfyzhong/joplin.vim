@@ -4,6 +4,7 @@
 import os
 import re
 import tempfile
+import time
 from datetime import datetime
 
 import vim
@@ -108,13 +109,55 @@ class Win(object):
         if note is None:
             return
 
-        note.body = '\n'.join(vim.current.buffer[:])
+        body = '\n'.join(vim.current.buffer[:])
+
+        in_diff = vim.current.buffer.vars.get('joplin_diff', False)
+
+        updated_time = vim.current.buffer.vars['joplin_updated']
+        if not in_diff and \
+                note.updated_time > updated_time and \
+                note.body != body:
+            select = 0
+            prompt = '<%s> has a newer version, update time %s, (D)iff, '\
+                '(o)verwrite: ' % (note.title, note.updated_time)
+            vim.command('echo "Joplin: %s"' % prompt)
+            select = 0
+            while True:
+                select = vim.Function('getchar')()
+                if select in [68, 100, 13, 27]:
+                    # D, d, <cr>, <esc>
+                    self._diff(note)
+                    return
+                elif select in [79, 111]:
+                    # O, o
+                    break
+
+        note.body = body
         self._joplin.put(note)
+        vim.current.buffer.vars['joplin_updated'] = note.updated_time
+        # remove unless diff buffer
+        if not in_diff:
+            diffnr = vim.current.buffer.vars.get('diffnr', [])
+            prog = re.compile(note.title + r'\.remote\.\d*\.md')
+            for bufnr in diffnr:
+                bufname = vim.Function('bufname')(bufnr).decode()
+                basename = os.path.basename(bufname)
+                if prog.match(basename):
+                    vim.command('%dbdelete!' % bufnr)
+
+            vim.current.buffer.vars['diffnr'] = []
 
     def leave(self):
         note_id = vim.current.buffer.vars.get('joplin_note_id', b'').decode()
         if note_id != '':
             self._save_pos(note_id)
+
+    def diffleave(self, id):
+        vim.command('wincmd w')
+        vim.current.buffer.vars['joplin_diff'] = False
+        vim.current.buffer.vars['joplin_updated'] = int(time.time() * 1000)
+        vim.command('diffoff')
+        vim.command('wincmd w')
 
     def saveas(self, is_todo, path):
         folders = path.split('/')
@@ -142,6 +185,24 @@ class Win(object):
         note_local_setting()
         vim.current.buffer.vars['joplin_note_id'] = note.id
         vim.command('noautocmd w')
+
+    def _diff(self, note):
+        newfile = os.path.join(
+            self._basedir, note.id,
+            '%s.remote.%d.md' % (note.title, note.updated_time))
+        with open(newfile, 'w') as f:
+            f.write(note.body)
+
+        vim.command('only')
+        vim.current.buffer.vars['joplin_diff'] = True
+        vim.command('diffsplit %s' % newfile)
+        bufnr = vim.Function('bufnr')()
+        vim.command('autocmd BufWinLeave <buffer> python3 '
+                    'pyjoplin.win.diffleave("%s")' % note.id)
+        vim.command('wincmd w')
+        diffnr = vim.current.buffer.vars.get('diffnr', [])
+        diffnr.append(bufnr)
+        vim.current.buffer.vars['diffnr'] = diffnr
 
     def _render_help(self, nr):
         lines = variable.help_lines if self._has_help else []
@@ -261,6 +322,7 @@ class Win(object):
         vim.command('silent %s %s' % (command, filename))
         vim.current.buffer.vars['joplin_note_id'] = note.id
         vim.current.buffer.vars['joplin_path'] = self._joplin.node_path(note)
+        vim.current.buffer.vars['joplin_updated'] = note.updated_time
         vim.current.buffer.options['filetype'] = 'joplin.markdown'
         if joplin_treenode_line > 0:
             vim.current.buffer.vars[
@@ -992,7 +1054,7 @@ def note_map_command(lhs, command):
 
 
 def note_local_setting():
-    vim.command('autocmd BufWritePost <buffer> python3 pyjoplin.win.write()')
+    vim.command('autocmd BufWritePre <buffer> python3 pyjoplin.win.write()')
     vim.command('autocmd BufWinLeave <buffer> python3 pyjoplin.win.leave()')
 
     # command for note
