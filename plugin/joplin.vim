@@ -13,6 +13,8 @@ if !exists('g:joplin_token')
   finish
 endif
 
+hi default JoplinInfoWin term=None cterm=None ctermfg=Cyan gui=None guifg=Cyan
+
 command! -nargs=0 JoplinWinOpen call joplin#open()
 command! -nargs=0 JoplinWinClose call joplin#close()
 command! -nargs=0 Joplin call joplin#toggle()

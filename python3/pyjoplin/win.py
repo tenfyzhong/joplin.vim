@@ -852,7 +852,7 @@ class Win(object):
         vim.Function('popup_dialog')(text, {
             'title': title,
             'filter': 'joplin#popup#info_filter',
-            'highlight': 'InfoMenu',
+            'highlight': 'JoplinInfoWin',
             'mapping': 0,
         })
 
