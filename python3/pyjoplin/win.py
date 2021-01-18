@@ -477,6 +477,25 @@ class Win(object):
             go_to_previous_win()
             self.edit('vsplit', treenode)
 
+    def cmd_ct(self, treenode):
+        if treenode is None:
+            return
+        if treenode.is_folder():
+            return
+        self._note_type_switch(treenode.node.id)
+        self._refresh_render(treenode.parent)
+        cursor(treenode)
+
+    def cmd_cc(self, treenode):
+        if treenode is None:
+            return
+        if treenode.is_folder():
+            return
+        if not self._todo_completed_switch(treenode.node.id):
+            return
+        self._refresh_render(treenode.parent)
+        cursor(treenode)
+
     def open_recusively(self, treenode):
         if treenode.is_folder() and not treenode.is_open():
             treenode.open(self._joplin, options.pin_todo,
@@ -895,10 +914,7 @@ class Win(object):
         if note_id == '':
             return
 
-        note = self._joplin.get(NoteNode, note_id)
-        note.is_todo ^= 1
-        note.todo_completed = 0
-        self._joplin.put(note)
+        self._note_type_switch(note_id)
         line = vim.current.buffer.vars.get('joplin_treenode_line', -1)
         if line != -1:
             self._refresh_treenode_line(line)
@@ -908,12 +924,8 @@ class Win(object):
         if note_id == '':
             return
 
-        note = self._joplin.get(NoteNode, note_id)
-        if not note.is_todo:
-            vim.command('echo "Joplin: not a todo"')
+        if not self._todo_completed_switch(note_id):
             return
-        note.todo_completed ^= 1
-        self._joplin.put(note)
         line = vim.current.buffer.vars.get('joplin_treenode_line', -1)
         if line != -1:
             self._refresh_treenode_line(line)
@@ -966,6 +978,7 @@ class Win(object):
         if treenode is not None and not treenode.is_folder():
             treenode = treenode.parent
         self._refresh_render(treenode)
+        vim.Function('cursor')(line, 1)
         vim.command('%dwincmd w' % winnr_saved)
         vim.command('redraw!')
         vim.options['lazyredraw'] = lazyredraw_saved
@@ -988,6 +1001,21 @@ class Win(object):
     def _find_folder_by_path(self, path):
         node = self._find_node_by_path(path)
         return node if node is not None and node.is_folder() else None
+
+    def _note_type_switch(self, note_id):
+        note = self._joplin.get(NoteNode, note_id)
+        note.is_todo ^= 1
+        note.todo_completed = 0
+        self._joplin.put(note)
+
+    def _todo_completed_switch(self, note_id):
+        note = self._joplin.get(NoteNode, note_id)
+        if not note.is_todo:
+            vim.command('echo "Joplin: not a todo"')
+            return False
+        note.todo_completed ^= 1
+        self._joplin.put(note)
+        return True
 
 
 class NoteInfo(object):
