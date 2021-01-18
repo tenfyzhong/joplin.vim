@@ -998,7 +998,7 @@ class Win(object):
         if line != -1:
             self._refresh_treenode_line(line)
 
-    def cmd_note_completed_switch(self):
+    def cmd_todo_completed_switch(self):
         note_id = vim.current.buffer.vars.get('joplin_note_id', b'').decode()
         if note_id == '':
             return
@@ -1178,8 +1178,8 @@ def note_local_setting():
                 'pyjoplin.win.cmd_note_info()')
     vim.command('command! -buffer -nargs=0 JoplinNoteTypeSwitch python3 '
                 'pyjoplin.win.cmd_note_type_switch()')
-    vim.command('command! -buffer -nargs=0 JoplinNoteCompletedSwitch python3 '
-                'pyjoplin.win.cmd_note_completed_switch()')
+    vim.command('command! -buffer -nargs=0 JoplinTodoCompletedSwitch python3 '
+                'pyjoplin.win.cmd_todo_completed_switch()')
 
     # command for tag
     vim.command(
@@ -1206,8 +1206,8 @@ def note_local_setting():
 
     note_map_command(options.map_note_info, 'JoplinNoteInfo<cr>')
     note_map_command(options.map_note_type_switch, 'JoplinNoteTypeSwitch<cr>')
-    note_map_command(options.map_note_completed_switch,
-                     'JoplinNoteCompletedSwitch<cr>')
+    note_map_command(options.map_todo_completed_switch,
+                     'JoplinTodoCompletedSwitch<cr>')
     note_map_command(options.map_tag_add, 'JoplinTagAdd ')
     note_map_command(options.map_tag_del, 'JoplinTagDel ')
     note_map_command(options.map_resrouce_attach, 'JoplinResourceAttach ')

@@ -23,7 +23,7 @@ relativenumber = vim.vars.get('joplin_relativenumber', 0)
 map_note_info = vim.vars.get('joplin_map_note_info', b'').decode()
 map_note_type_switch = vim.vars.get('joplin_map_note_type_switch',
                                     b'').decode()
-map_note_completed_switch = vim.vars.get('joplin_map_note_completed_switch',
+map_todo_completed_switch = vim.vars.get('joplin_map_todo_completed_switch',
                                          b'').decode()
 map_tag_add = vim.vars.get('joplin_map_tag_add', b'').decode()
 map_tag_del = vim.vars.get('joplin_map_tag_del', b'').decode()

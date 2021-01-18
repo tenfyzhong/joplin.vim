@@ -115,7 +115,7 @@ Show note/todo infomation in popup window.
 6.2.2 *JoplinNoteTypeSwitch*
 Switch between note and todo type.
 
-6.2.3 *JoplinNoteCompltedSwitch*
+6.2.3 *JoplinTodoCompltedSwitch*
 Switch todo completed. 
 
 6.2.4 *JoplinTagAdd*
@@ -214,8 +214,8 @@ Default: ''
 Mapping for command |JoplinNoteTypeSwitch|.
 Default: ''
 
-7.2.3 *g:joplin_map_note_completed_switch*
-Mapping for command |JoplinNoteCompltedSwitch|.
+7.2.3 *g:joplin_map_todo_completed_switch*
+Mapping for command |JoplinTodoCompltedSwitch|.
 Default: ''
 
 7.2.4 *g:joplin_map_tag_add*
