@@ -890,7 +890,7 @@ class Win(object):
         if len(tags) > 0:
             self._joplin.delete_tag_note(tags[0].id, note_id)
 
-    def cmd_note_type_convert(self):
+    def cmd_note_type_switch(self):
         note_id = vim.current.buffer.vars.get('joplin_note_id', b'').decode()
         if note_id == '':
             return
@@ -903,7 +903,7 @@ class Win(object):
         if line != -1:
             self._refresh_treenode_line(line)
 
-    def cmd_note_complete_convert(self):
+    def cmd_note_completed_switch(self):
         note_id = vim.current.buffer.vars.get('joplin_note_id', b'').decode()
         if note_id == '':
             return
@@ -1059,10 +1059,10 @@ def note_local_setting():
     # command for note
     vim.command('command! -buffer -nargs=0 JoplinNoteInfo python3 '
                 'pyjoplin.win.cmd_note_info()')
-    vim.command('command! -buffer -nargs=0 JoplinNoteTypeConvert python3 '
-                'pyjoplin.win.cmd_note_type_convert()')
-    vim.command('command! -buffer -nargs=0 JoplinNoteCompleteConvert python3 '
-                'pyjoplin.win.cmd_note_complete_convert()')
+    vim.command('command! -buffer -nargs=0 JoplinNoteTypeSwitch python3 '
+                'pyjoplin.win.cmd_note_type_switch()')
+    vim.command('command! -buffer -nargs=0 JoplinNoteCompletedSwitch python3 '
+                'pyjoplin.win.cmd_note_completed_switch()')
 
     # command for tag
     vim.command(
@@ -1088,10 +1088,9 @@ def note_local_setting():
                 'python3 pyjoplin.win.cmd_link_node(<q-args>)')
 
     note_map_command(options.map_note_info, 'JoplinNoteInfo<cr>')
-    note_map_command(options.map_note_type_convert,
-                     'JoplinNoteTypeConvert<cr>')
-    note_map_command(options.map_note_complete_convert,
-                     'JoplinNoteCompleteConvert<cr>')
+    note_map_command(options.map_note_type_switch, 'JoplinNoteTypeSwitch<cr>')
+    note_map_command(options.map_note_completed_switch,
+                     'JoplinNoteCompletedSwitch<cr>')
     note_map_command(options.map_tag_add, 'JoplinTagAdd ')
     note_map_command(options.map_tag_del, 'JoplinTagDel ')
     note_map_command(options.map_resrouce_attach, 'JoplinResourceAttach ')
