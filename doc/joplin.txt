@@ -1,0 +1,246 @@
+*joplin.vim* *joplin.txt* author: tenfyzhong email: tenfy@tenfy.cn
+
+================================================================================
+Contents:
+1. Introduction -------------------------------- |joplin-introduction|
+2. Dependence ---------------------------------- |joplin-dependence|
+3. Install ------------------------------------- |joplin-install|
+4. Usage --------------------------------------- |joplin-usage|
+5. Mapping ------------------------------------- |joplin-mapping|
+6. Command ------------------------------------- |joplin-command|
+7. Options ------------------------------------- |joplin-options|
+8. LICENSE ------------------------------------- |joplin-license|
+
+================================================================================
+1. Introduction                                  *joplin-introduction*
+This is a plugin for us to use [joplin.app](https://joplinapp.org/) in vim.  
+
+================================================================================
+2. Dependence                                    *joplin-dependence*
+a) vim 8.2
+b) python3
+c) joplin.app
+
+================================================================================
+3. Install                                       *joplin-install*
+- [vim-plug](https://github.com/junegunn/vim-plug)
+  Plug 'tenfyzhong/joplin.vim'
+
+- Manual
+  git clone https://github.com/tenfyzhong/joplin.vim.git ~/.vim/bundle/joplin.vim
+  echo 'set rtp+=~/.vim/bundle/joplin.vim' >> ~/.vimrc
+  vim -c 'helptag ~/.vim/bundle/joplin.vim/doc' -c qa!
+
+
+================================================================================
+4. Usage                                         *joplin-usage*
+Enable you joplin.app's web clipper service first (Setting->Web Clipper).
+And then copy you authorization token in the setting page. Set the token to
+|g:joplin_token| in you vimrc. After enable the service, it will listen on
+port 41184 by default. This plugin will connect to the default port when the
+plugin start. If your joplin.app listen on other port, you should set the port
+to |g:joplin_port|
+
+Run command |Joplin| or |JoplinWinOpen| to open the `tree.joplin` window. It 
+contains all notebooks and notes. 
+
+================================================================================
+5. Mapping                                       *joplin-mapping*
+5.1 tree.joplin window mapping
+ 
+|      key     |      node type     | description                                               |
+| ------------ | ------------------ | --------------------------------------------------------- |
+| double-click |      note/todo     | open in previous window                                   |
+|     <cr>     |      note/todo     | open in previous window                                   |
+|       o      |      note/todo     | open in previous window                                   |
+|       t      |      note/todo     | open in new tab                                           |
+|       i      |      note/todo     | open split                                                |
+|       s      |      note/todo     | open vsplit                                               |
+|      ct      |      note/todo     | switch between note and todo type                         |
+|      cc      |        todo        | switch todo completed                                     |
+| double-click |      notebook      | open and close notebook                                   |
+|     <cr>     |      notebook      | open and close notebook                                   |
+|       o      |      notebook      | open and close notebook                                   |
+|       O      |      notebook      | recursively open notebook                                 |
+|       x      | notebook/note/todo | close parent of node                                      |
+|       X      | notebook/note/todo | close all child notebooks of current notebook recursively |
+|       r      | notebook/note/todo | refresh current notebook                                  |
+|       R      | notebook/note/todo | refresh current root                                      |
+|       P      | notebook/note/todo | go to root                                                |
+|       p      | notebook/note/todo | go to parent                                              |
+|       K      | notebook/note/todo | go to first child                                         |
+|       J      | notebook/note/todo | go to last child                                          |
+|     <C-j>    | notebook/note/todo | go to next sibling                                        |
+|     <C-k>    | notebook/note/todo | go to previous sibling                                    |
+|      ab      |                    | add a notebook                                            |
+|      an      |                    | add a note                                                |
+|      at      |                    | add a todo                                                |
+|      dd      | notebook/note/todo | delete a node                                             |
+|      cp      | notebook/note/todo | copy a node                                               |
+|      mv      | notebook/note/todo | move a node                                               |
+|       q      |                    | close the tree.joplin window                              |
+|       ?      |                    | toggle help                                               |
+
+
+
+5.2 note mapping
+The mapping for note is disable by default. You should set the options to
+enable. See |joplin-options-mapping|
+
+================================================================================
+6. Command                                       *joplin-command*
+6.1 global command
+6.1.1 *Joplin*
+Toggle tree.joplin window
+ 
+6.1.2 *JoplinWinOpen*
+Open tree.joplin window 
+ 
+6.1.3 *JoplinWinClose*
+Close tree.joplin window
+ 
+6.1.4 *JoplinSaveAsNote*
+Save current buffer as a note. The title of the note is the buffer name.
+ 
+6.1.5 *JoplinSaveAsTodo*
+Save current buffer as a todo. The title of the todo is the buffer name.
+ 
+6.1.6 JoplinSearch
+Search keyword from joplin.app. 
+
+6.2 command for note or todo
+6.2.1 *JoplinNoteInfo*
+Show note/todo infomation in popup window.
+
+6.2.2 *JoplinNoteTypeSwitch*
+Switch between note and todo type.
+
+6.2.3 *JoplinNoteCompltedSwitch*
+Switch todo completed. 
+
+6.2.4 *JoplinTagAdd*
+Add a tag to current note/todo. 
+
+6.2.5 *JoplinTagDel*
+Delete a tag from note/todo.
+
+6.2.6 *JoplinResourceAttach*
+Upload a new resource and attach to current note/todo. 
+
+6.2.7 *JoplinLinkResource*
+Link a resource to current note/todo.
+
+6.2.8 *JoplinLinkNode*
+Link a note/todo/notebook to current note/todo.
+
+
+================================================================================
+7. Options                                       *joplin-options*
+7.1 global options                               *joplin-options-global*
+7.1.1 *g:joplin_token*
+Your joplin.app token. 
+Default: ''
+
+7.1.2 *g:joplin_host*
+The host joplin.app linten on.
+Default: 'localhost'
+
+7.1.3 *g:joplin_port*
+The port joplin.app linten on.
+Default: 41184
+
+7.1.4 *g:joplin_window_width*
+The tree.joplin window size.
+Default: 30
+
+7.1.5 *g:joplin_icon_open*
+The icon when the notebook is open.
+Default: '-'
+
+7.1.6 *g:joplin_icon_close*
+The icon when the notebook is close. 
+Default: '+'
+
+7.1.7 *g:joplin_icon_todo*
+The icon for todo. 
+Default: '[ ]'
+
+7.1.8 *g:joplin_icon_completed*
+The icon for completed todo. 
+Default: '[x]'
+
+7.1.9 *g:joplin_icon_note*
+The icon for note.
+Default: ''
+
+7.1.10 *g:joplin_pin_todo*
+Pin uncomplated todo
+Default: 1
+
+7.1.11 *g:joplin_hide_completed*
+Hide completed todo. 
+Default: 0
+
+7.1.12 *g:joplin_notebook_order_by*
+The field for notebook to order.
+Default: 'title'
+
+7.1.13 *g:joplin_notebook_order_desc*
+Descend notebook.
+Default: 0
+
+7.1.14 *g:joplin_note_order_by*
+The field for note to order.
+Default: 'updated_time'
+
+7.1.15 *g:joplin_note_order_desc*
+Descend note.
+Default: 0
+
+7.1.16 *g:joplin_number*
+Enable line number in tree.joplin window.
+Default: 0
+
+7.1.17 *g:joplin_relativenumber*
+Enable relative line number in tree.joplin window.
+Default: 0
+
+7.2 options for note/todo mapping                     *joplin-options-mapping*
+7.2.1 *g:joplin_map_note_info*
+Mapping for command |JoplinNoteInfo|. 
+Default: ''
+
+7.2.2 *g:joplin_map_note_type_switch*
+Mapping for command |JoplinNoteTypeSwitch|.
+Default: ''
+
+7.2.3 *g:joplin_map_note_completed_switch*
+Mapping for command |JoplinNoteCompltedSwitch|.
+Default: ''
+
+7.2.4 *g:joplin_map_tag_add*
+Mapping for command |JoplinTagAdd|.
+Default: ''
+
+7.2.5 *g:joplin_map_tag_del*
+Mapping for command |JoplinTagDel|. 
+Default: ''
+
+7.2.6 *g:joplin_map_resource_attach*
+Mapping for command |JoplinResourceAttach|.
+Default: ''
+
+7.2.7 *g:joplin_map_link_resource*
+Mapping for command |JoplinLinkResource|. 
+Default: ''
+
+7.2.8 *g:joplin_map_link_node*
+Mapping for command |JoplinLinkNode|. 
+Default: ''
+
+================================================================================
+8. LICENSE                                       *joplin-license*
+MIT License  Copyright (c) 2021 tenfy
+
+" vim:ft=help:iskeyword+=-:iskeyword+=58:iskeyword+=#
+
