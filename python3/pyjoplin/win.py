@@ -778,6 +778,85 @@ class Win(object):
                 vim.command('echo "Joplin: delete aborted"')
                 break
 
+    def vmap_cc(self):
+        getpos = vim.Function('getpos')
+        _, start, _, _ = getpos("'<")
+        _, end, _, _ = getpos("'>")
+        parents = set()
+        for line in range(start, end + 1):
+            treenode = self._get_line_node(line)
+            if treenode is None or treenode.is_folder():
+                continue
+            if self._todo_completed_switch(treenode.node.id, True):
+                parents.add(treenode.parent)
+
+        if len(parents) > 0:
+            for parent in parents:
+                self._refresh(parent)
+
+            self._render()
+            vim.Function('cursor')(start, 1)
+
+    def vmap_ct(self):
+        getpos = vim.Function('getpos')
+        _, start, _, _ = getpos("'<")
+        _, end, _, _ = getpos("'>")
+        parents = set()
+        for line in range(start, end + 1):
+            treenode = self._get_line_node(line)
+            if treenode is None or treenode.is_folder():
+                continue
+            self._note_type_switch(treenode.node.id)
+            parents.add(treenode.parent)
+
+        if len(parents) > 0:
+            for parent in parents:
+                self._refresh(parent)
+
+            self._render()
+            vim.Function('cursor')(start, 1)
+
+    def vmap_dd(self):
+        getpos = vim.Function('getpos')
+        _, start, _, _ = getpos("'<")
+        _, end, _, _ = getpos("'>")
+        nodes = list(
+            [self._get_line_node(line) for line in range(start, end + 1)])
+        nodes = list(filter(lambda node: node is not None, nodes))
+        if len(nodes) == 0:
+            return
+        titles = list([node.node.title for node in nodes])
+        title = ','.join(titles)
+        prompt = 'Delete notes/notebooks <%s>?' % title
+        if len(list([node for node in nodes if node.is_folder()])) > 0:
+            prompt += '*All notes and sub-notebooks within notebook will also'\
+                ' be deleted*'
+
+        prompt += ' (y/N): '
+
+        vim.command('echo "Joplin: %s"' % prompt)
+        select = 0
+        # 89 == Y, 121 == y, 78 == N, 110 == n, 27 == <esc>, 13 == <cr>
+        while True:
+            select = vim.Function('getchar')()
+            if select in [89, 121]:
+                parents = {node.parent for node in nodes}
+                for node in nodes:
+                    cls = FolderNode if node.is_folder() else NoteNode
+                    self._joplin.delete(cls, node.node.id)
+
+                line = vim.Function('line')('.')
+                for parent in parents:
+                    self._refresh(parent)
+
+                self._render()
+                vim.Function('cursor')(line, 1)
+                break
+            elif select in [78, 110, 27, 13]:
+                vim.command('redraw!')
+                vim.command('echo "Joplin: delete aborted"')
+                break
+
     def search(self, query):
         if query == '':
             return
@@ -962,6 +1041,9 @@ class Win(object):
 
     def get_cur_line(self):
         lineno = int(vim.eval('line(".")'))
+        return self._get_line_node(lineno)
+
+    def _get_line_node(self, lineno):
         if lineno <= self._base_line():
             return None
         return find_treenode(self._root, lineno)
@@ -974,7 +1056,7 @@ class Win(object):
         lazyredraw_saved = vim.options['lazyredraw']
         vim.options['lazyredraw'] = True
         vim.command('%dwincmd w' % winnr)
-        treenode = find_treenode(self._root, line)
+        treenode = self._get_line_node(line)
         if treenode is not None and not treenode.is_folder():
             treenode = treenode.parent
         self._refresh_render(treenode)
@@ -1008,10 +1090,12 @@ class Win(object):
         note.todo_completed = 0
         self._joplin.put(note)
 
-    def _todo_completed_switch(self, note_id):
+    def _todo_completed_switch(self, note_id, silent=False):
         note = self._joplin.get(NoteNode, note_id)
         if not note.is_todo:
-            vim.command('echo "Joplin: not a todo"')
+            if not silent:
+                vim.command('echo "Joplin: not a todo"')
+
             return False
         note.todo_completed ^= 1
         self._joplin.put(note)
@@ -1061,6 +1145,11 @@ def set_map():
     for lhs, rhs in variable.win_mapping.items():
         cmd = 'nnoremap <script><silent><buffer>%s <esc>:<c-u>python3 ' \
                 'pyjoplin.win.%s()<cr>' % (lhs, rhs)
+        vim.command(cmd)
+
+    for lhs, rhs in variable.vmap.items():
+        cmd = 'vnoremap <script><silent><buffer>%s :python3 ' \
+            'pyjoplin.win.%s()<cr>' % (lhs, rhs)
         vim.command(cmd)
 
 

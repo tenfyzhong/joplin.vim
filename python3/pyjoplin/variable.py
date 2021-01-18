@@ -92,6 +92,12 @@ win_mapping = {
     '?': 'cmd_question_mark',
 }
 
+vmap = {
+    'cc': 'vmap_cc',
+    'ct': 'vmap_ct',
+    'dd': 'vmap_dd',
+}
+
 unmap = ['<C-r>', 'u', 'U', 'I', 'a', 'A', 's', 'S', 'd', 'D', 'c', 'C']
 
 info_popup_guide = "*press 'q' to close the window*"
