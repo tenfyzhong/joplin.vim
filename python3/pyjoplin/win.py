@@ -131,8 +131,10 @@ class Win(object):
                     # O, o
                     break
 
+        vim.command('noautocmd w')
+        vim.command('set nomodified')
         note.body = body
-        self._joplin.put(note)
+        note = self._joplin.put(note)
         vim.current.buffer.vars['joplin_updated'] = note.updated_time
         # remove unless diff buffer
         if not in_diff:
@@ -199,7 +201,8 @@ class Win(object):
         vim.command('autocmd BufWinLeave <buffer> python3 '
                     'pyjoplin.win.diffleave("%s")' % note.id)
         vim.command('wincmd w')
-        diffnr = vim.current.buffer.vars.get('diffnr', [])
+        # vim.command('set modified')
+        diffnr = list(vim.current.buffer.vars.get('diffnr', []))
         diffnr.append(bufnr)
         vim.current.buffer.vars['diffnr'] = diffnr
 
@@ -1170,7 +1173,7 @@ def note_map_command(lhs, command):
 
 
 def note_local_setting():
-    vim.command('autocmd BufWritePre <buffer> python3 pyjoplin.win.write()')
+    vim.command('autocmd BufWriteCmd <buffer> python3 pyjoplin.win.write()')
     vim.command('autocmd BufWinLeave <buffer> python3 pyjoplin.win.leave()')
 
     # command for note
