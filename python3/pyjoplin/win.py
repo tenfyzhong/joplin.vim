@@ -131,10 +131,10 @@ class Win(object):
                     # O, o
                     break
 
-        vim.command('noautocmd w')
-        vim.command('set nomodified')
         note.body = body
         note = self._joplin.put(note)
+        if note is None:
+            return
         vim.current.buffer.vars['joplin_updated'] = note.updated_time
         # remove unless diff buffer
         if not in_diff:
@@ -147,6 +147,9 @@ class Win(object):
                     vim.command('%dbdelete!' % bufnr)
 
             vim.current.buffer.vars['diffnr'] = []
+
+        vim.command('noautocmd w')
+        vim.command('set nomodified')
 
     def leave(self):
         note_id = vim.current.buffer.vars.get('joplin_note_id', b'').decode()
