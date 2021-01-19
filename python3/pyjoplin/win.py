@@ -118,7 +118,7 @@ class Win(object):
                 note.body != body:
             select = 0
             prompt = '<%s> has a newer version, update time %s, (D)iff, '\
-                '(o)verwrite: ' % (note.title, note.updated_time)
+                '(o)verwrite: ' % (note.title, strftime(note.updated_time))
             vim.command('echo "Joplin: %s"' % prompt)
             select = 0
             while True:
