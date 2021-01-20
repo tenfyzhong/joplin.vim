@@ -54,6 +54,7 @@ help_lines = [
     '# dd: delete a node',
     '# cp: copy a node',
     '# mv: move a node',
+    '# rn: rename a node',
     '# q: close the tree.joplin window',
     '# ?: toggle help',
     '',
@@ -84,6 +85,7 @@ treenode_mapping = {
     'cp': 'cmd_cp',
     'an': 'cmd_an',
     'at': 'cmd_at',
+    'rn': 'cmd_rn',
 }
 
 win_mapping = {

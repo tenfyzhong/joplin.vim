@@ -679,6 +679,22 @@ class Win(object):
             self._refresh_render(parent)
             vim.Function('cursor')(line, 1)
 
+    def cmd_rn(self, treenode):
+        if treenode is None:
+            return
+        prompt = 'Rename %s to: ' % treenode.node.title
+        new_name = vim.Function('input')(prompt, treenode.node.title).decode()
+        if new_name == treenode.node.title:
+            return
+        node = self._joplin.get(FolderNode, treenode.node.id) \
+            if treenode.is_folder() \
+            else self._joplin.get(NoteNode, treenode.node.id)
+        node.title = new_name
+        node = self._joplin.put(node)
+        treenode.node.title = new_name
+        self._render()
+        cursor(treenode)
+
     def cmd_mv(self, treenode):
         if treenode is None:
             return

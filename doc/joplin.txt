@@ -78,6 +78,7 @@ contains all notebooks and notes.
 |      dd      | notebook/note/todo | delete a node                                             |
 |      cp      | notebook/note/todo | copy a node                                               |
 |      mv      | notebook/note/todo | move a node                                               |
+|      rn      | notebook/note/todo | rename a node                                             |
 |       q      |                    | close the tree.joplin window                              |
 |       ?      |                    | toggle help                                               |
 
