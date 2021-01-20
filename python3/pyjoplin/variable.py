@@ -96,6 +96,7 @@ vmap = {
     'cc': 'vmap_cc',
     'ct': 'vmap_ct',
     'dd': 'vmap_dd',
+    'mv': 'vmap_mv',
 }
 
 unmap = ['<C-r>', 'u', 'U', 'I', 'a', 'A', 's', 'S', 'd', 'D', 'c', 'C']

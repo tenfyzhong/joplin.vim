@@ -695,10 +695,11 @@ class Win(object):
             return
 
         if parent.node.id == '' and not treenode.is_folder():
-            vim.command('echo "Joplin: note should mv to a notebook"')
+            vim.command('echo "Joplin: note/notebook should mv to a notebook"')
             return
 
-        if parent.node.id == treenode.parent.node.id:
+        if parent.node.id == treenode.parent.node.id or \
+                parent.node.id == treenode.node.id:
             return
 
         node = self._joplin.get(FolderNode, treenode.node.id) \
@@ -862,6 +863,49 @@ class Win(object):
                 vim.command('redraw!')
                 vim.command('echo "Joplin: delete aborted"')
                 break
+
+    def vmap_mv(self):
+        getpos = vim.Function('getpos')
+        _, start, _, _ = getpos("'<")
+        _, end, _, _ = getpos("'>")
+        line = vim.Function('line')('.')
+        current_node = self._get_line_node(line)
+        origin_parent = current_node.parent
+        default_path = '' if origin_parent is None \
+            else tree.node_path(origin_parent)
+        prompt = 'Move selected to: '
+        path = input_path(prompt, default_path)
+        folders = path.split('/')
+        parent = self._find_folder_by_path(folders)
+        if parent is None or not parent.is_folder():
+            vim.command('echo "Joplin: not such notebook<%s>"' % path)
+            return
+
+        if parent.node.id == '' and not parent.is_folder():
+            vim.command('echo "Joplin: note/notebook should mv to a notebook"')
+            return
+
+        new_parent = set()
+        new_parent.add(parent)
+        for line in range(start, end + 1):
+            treenode = self._get_line_node(line)
+            if treenode is None:
+                continue
+            if treenode.node.id == parent.node.id or \
+                    treenode.parent.node.id == parent.node.id:
+                continue
+            node = self._joplin.get(FolderNode, treenode.node.id) \
+                if treenode.is_folder() \
+                else self._joplin.get(NoteNode, treenode.node.id)
+            node.parent_id = parent.node.id
+            node = self._joplin.put(node)
+            new_parent.add(treenode.parent)
+
+        for parent in new_parent:
+            self._refresh(parent)
+
+        self._render()
+        cursor(origin_parent)
 
     def search(self, query):
         if query == '':
