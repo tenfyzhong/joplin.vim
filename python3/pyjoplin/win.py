@@ -318,6 +318,7 @@ class Win(object):
         vim.options['undolevels'] = -1
         dirname = os.path.join(self._basedir, note.id)
         filename = os.path.join(dirname, note.title + '.md')
+        filename = vim.Function('fnameescape')(filename).decode()
         try:
             os.mkdir(dirname)
         except:
