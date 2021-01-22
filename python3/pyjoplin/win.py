@@ -777,7 +777,7 @@ class Win(object):
                 'within this notebook will also be deleted* (y/N): ' \
                 % treenode.node.title
         else:
-            prompt = 'Delete note <%s>? (y/N)' % treenode.node.title
+            prompt = 'Delete note <%s>? (y/N): ' % treenode.node.title
 
         cls = FolderNode if treenode.is_folder() else NoteNode
         vim.command('echo "Joplin: %s"' % prompt)
@@ -848,37 +848,45 @@ class Win(object):
         nodes = list(filter(lambda node: node is not None, nodes))
         if len(nodes) == 0:
             return
-        titles = list([node.node.title for node in nodes])
-        title = ','.join(titles)
-        prompt = 'Delete notes/notebooks <%s>?' % title
-        if len(list([node for node in nodes if node.is_folder()])) > 0:
-            prompt += '*All notes and sub-notebooks within notebook will also'\
-                ' be deleted*'
 
-        prompt += ' (y/N): '
-
-        vim.command('echo "Joplin: %s"' % prompt)
+        is_all = False
+        prompt = ''
         select = 0
-        # 89 == Y, 121 == y, 78 == N, 110 == n, 27 == <esc>, 13 == <cr>
-        while True:
-            select = vim.Function('getchar')()
-            if select in [89, 121]:
-                parents = {node.parent for node in nodes}
-                for node in nodes:
+        parents = set()
+        for node in nodes:
+            if not is_all:
+                if node.is_folder():
+                    prompt = 'Delete notebook <%s>?*All notes and '\
+                        'sub-notebooks within this notebook will also be '\
+                        'deleted* (y/N/a): ' % node.node.title
+                else:
+                    prompt = 'Delete note <%s>? (y/N/a):' % node.node.title
+
+                vim.command('echo "Joplin: %s"' % prompt)
+
+            # 89 == Y, 121 == y, 78 == N, 110 == n, 27 == <esc>, 13 == <cr>
+            # 65 == A, 97 == a
+            while True:
+                if not is_all:
+                    select = vim.Function('getchar')()
+                if select in [89, 121, 65, 97]:
+                    parents.add(node.parent)
                     cls = FolderNode if node.is_folder() else NoteNode
                     self._joplin.delete(cls, node.node.id)
+                    is_all = select in [65, 97]
+                    break
+                elif select in [78, 110, 27, 13]:
+                    vim.command('redraw!')
+                    vim.command('echo "Joplin: delete aborted"')
+                    break
 
-                line = vim.Function('line')('.')
-                for parent in parents:
-                    self._refresh(parent)
+        line = vim.Function('line')('.')
+        for parent in parents:
+            self._refresh(parent)
 
-                self._render()
-                vim.Function('cursor')(line, 1)
-                break
-            elif select in [78, 110, 27, 13]:
-                vim.command('redraw!')
-                vim.command('echo "Joplin: delete aborted"')
-                break
+        self._render()
+        vim.command('redraw!')
+        vim.Function('cursor')(line, 1)
 
     def vmap_mv(self):
         getpos = vim.Function('getpos')
