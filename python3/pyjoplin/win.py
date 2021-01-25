@@ -284,7 +284,7 @@ class Win(object):
         try:
             with open(path, 'w') as f:
                 f.write('%d,%d,%d' % (lnum, col, topline))
-        except:
+        except Exception:
             pass
 
     def _set_pos(self, id):
@@ -308,7 +308,7 @@ class Win(object):
                 vim.options['scrolloff'] = scrolloff_saved
 
                 vim.Function('cursor')(lnum, col)
-        except:
+        except Exception:
             pass
 
     def _edit_note(self, command, reopen_tree, note, joplin_treenode_line):
@@ -322,8 +322,10 @@ class Win(object):
         filename = vim.Function('fnameescape')(filename).decode()
         try:
             os.mkdir(dirname)
-        except:
-            pass
+        except Exception as e:
+            vim.command('echo "Joplin: can not create <%s>, %s"' %
+                        (dirname, e))
+            return
 
         existed = os.path.isfile(filename)
         vim.command('silent %s %s' % (command, filename))
