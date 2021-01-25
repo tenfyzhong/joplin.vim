@@ -5,7 +5,6 @@ pyjoplin.win.init()
 health = pyjoplin.win.health()
 if not health:
     vim.command('echo "Joplin: please run joplin.app first"')
-    vim.command('finish')
 EOF
 
 function! joplin#complete#tag(A, L, P)
