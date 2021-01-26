@@ -48,39 +48,39 @@ contains all notebooks and notes.
 5. Mapping                                       *joplin-mapping*
 5.1 tree.joplin window mapping
  
-|      key     |      node type     | description                                               |
-| ------------ | ------------------ | --------------------------------------------------------- |
-| double-click |      note/todo     | open in previous window                                   |
-|     <cr>     |      note/todo     | open in previous window                                   |
-|       o      |      note/todo     | open in previous window                                   |
-|       t      |      note/todo     | open in new tab                                           |
-|       i      |      note/todo     | open split                                                |
-|       s      |      note/todo     | open vsplit                                               |
-|      ct      |      note/todo     | switch between note and todo type                         |
-|      cc      |        todo        | switch todo completed                                     |
-| double-click |      notebook      | open and close notebook                                   |
-|     <cr>     |      notebook      | open and close notebook                                   |
-|       o      |      notebook      | open and close notebook                                   |
-|       O      |      notebook      | recursively open notebook                                 |
-|       x      | notebook/note/todo | close parent of node                                      |
-|       X      | notebook/note/todo | close all child notebooks of current notebook recursively |
-|       r      | notebook/note/todo | refresh current notebook                                  |
-|       R      | notebook/note/todo | refresh current root                                      |
-|       P      | notebook/note/todo | go to root                                                |
-|       p      | notebook/note/todo | go to parent                                              |
-|       K      | notebook/note/todo | go to first child                                         |
-|       J      | notebook/note/todo | go to last child                                          |
-|     <C-j>    | notebook/note/todo | go to next sibling                                        |
-|     <C-k>    | notebook/note/todo | go to previous sibling                                    |
-|      ab      |                    | add a notebook                                            |
-|      an      |                    | add a note                                                |
-|      at      |                    | add a todo                                                |
-|      dd      | notebook/note/todo | delete a node                                             |
-|      cp      | notebook/note/todo | copy a node                                               |
-|      mv      | notebook/note/todo | move a node                                               |
-|      rn      | notebook/note/todo | rename a node                                             |
-|       q      |                    | close the tree.joplin window                              |
-|       ?      |                    | toggle help                                               |
+| key          | mode | node type          | description                                               |
+| ------------ | ---- | ------------------ | --------------------------------------------------------- |
+| double-click | n    | note/todo          | open in previous window                                   |
+| <cr>         | n    | note/todo          | open in previous window                                   |
+| o            | n    | note/todo          | open in previous window                                   |
+| t            | n    | note/todo          | open in new tab                                           |
+| i            | n    | note/todo          | open split                                                |
+| s            | n    | note/todo          | open vsplit                                               |
+| ct           | nv   | note/todo          | switch between note and todo type                         |
+| cc           | nv   | todo               | switch todo completed                                     |
+| double-click | n    | notebook           | open and close notebook                                   |
+| <cr>         | n    | notebook           | open and close notebook                                   |
+| o            | n    | notebook           | open and close notebook                                   |
+| O            | n    | notebook           | recursively open notebook                                 |
+| x            | n    | notebook/note/todo | close parent of node                                      |
+| X            | n    | notebook/note/todo | close all child notebooks of current notebook recursively |
+| r            | n    | notebook/note/todo | refresh current notebook                                  |
+| R            | n    | notebook/note/todo | refresh current root                                      |
+| P            | n    | notebook/note/todo | go to root                                                |
+| p            | n    | notebook/note/todo | go to parent                                              |
+| K            | n    | notebook/note/todo | go to first child                                         |
+| J            | n    | notebook/note/todo | go to last child                                          |
+| <C-j>        | n    | notebook/note/todo | go to next sibling                                        |
+| <C-k>        | n    | notebook/note/todo | go to previous sibling                                    |
+| ab           | n    |                    | add a notebook                                            |
+| an           | n    |                    | add a note                                                |
+| at           | n    |                    | add a todo                                                |
+| dd           | nv   | notebook/note/todo | delete a node                                             |
+| cp           | n    | notebook/note/todo | copy a node                                               |
+| mv           | nv   | notebook/note/todo | move a node                                               |
+| rn           | n    | notebook/note/todo | rename a node                                             |
+| q            | n    |                    | close the tree.joplin window                              |
+| ?            | n    |                    | toggle help                                               |
 
 
 
