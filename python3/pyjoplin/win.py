@@ -1244,6 +1244,9 @@ def tree_line(node, indent):
 def note_map_command(lhs, command):
     if lhs == '':
         return
+    origin = vim.Function('maparg')(lhs, 'n').decode()
+    if origin != '':
+        return
     vim.command('nnoremap <buffer>%s <esc>:<c-u>%s' % (lhs, command))
 
 
