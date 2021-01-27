@@ -317,8 +317,9 @@ class Win(object):
         undolevel_saved = vim.options['undolevels']
         vim.options['undolevels'] = -1
         dirname = os.path.join(self._basedir, note.id)
-        filename = os.path.join(dirname, note.title + '.md')
+        filename = note.title + '.md'
         filename = filename.replace('/', '-')
+        filename = os.path.join(dirname, filename)
         filename = vim.Function('fnameescape')(filename).decode()
         try:
             os.mkdir(dirname)
@@ -328,6 +329,7 @@ class Win(object):
             return
 
         existed = os.path.isfile(filename)
+        vim.command('lcd %s' % dirname)
         vim.command('silent %s %s' % (command, filename))
         vim.current.buffer.vars['joplin_note_id'] = note.id
         vim.current.buffer.vars['joplin_path'] = self._joplin.node_path(note)
