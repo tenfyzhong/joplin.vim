@@ -690,7 +690,7 @@ class Win(object):
             return
         prompt = 'Rename %s to: ' % treenode.node.title
         new_name = vim.Function('input')(prompt, treenode.node.title).decode()
-        if new_name == treenode.node.title:
+        if new_name == treenode.node.title or new_name == '':
             return
         node = self._joplin.get(FolderNode, treenode.node.id) \
             if treenode.is_folder() \
