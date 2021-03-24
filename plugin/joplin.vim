@@ -1,7 +1,7 @@
-if exists('g:joplin_token_loaded')
+if exists('g:joplin_loaded')
   finish
 endif
-let g:joplin_token_loaded = 1
+let g:joplin_loaded = 1
 
 if v:version < 802
   echom 'Joplin needs vim 8.2+'
