@@ -323,6 +323,8 @@ class Win(object):
         filename = vim.Function('fnameescape')(filename).decode()
         try:
             os.mkdir(dirname)
+        except FileExistsError:
+            pass
         except Exception as e:
             vim.command('echo "Joplin: can not create <%s>, %s"' %
                         (dirname, e))
